@@ -1,18 +1,18 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getProducts, saveProduct, deleteProduct, Product } from '@/lib/db'
+import { db, Product } from '@/lib/db'
 
 export default function ProdukPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', price: '', cost: '', stock_qty: '' })
 
-  async function load() { setProducts(await getProducts()) }
+  async function load() { setProducts(await db.products.toArray()) }
   useEffect(() => { load() }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    await saveProduct({
+    await db.products.add({
       id: crypto.randomUUID(),
       name: form.name,
       price: Number(form.price),
@@ -21,6 +21,12 @@ export default function ProdukPage() {
     })
     setForm({ name: '', price: '', cost: '', stock_qty: '' })
     setShowForm(false)
+    load()
+  }
+
+  async function deleteItem(id: string) {
+    if (!confirm('Hapus produk ini?')) return
+    await db.products.delete(id)
     load()
   }
 
@@ -50,7 +56,7 @@ export default function ProdukPage() {
               <td className="p-2">{p.name}</td>
               <td className="p-2 text-right">Rp {p.price.toLocaleString()}</td>
               <td className="p-2 text-right">{p.stock_qty}</td>
-              <td className="p-2 text-right"><button onClick={() => { if(confirm('Hapus?')) { deleteProduct(p.id); load() } }} className="text-red-500 text-xs">hapus</button></td>
+              <td className="p-2 text-right"><button onClick={() => deleteItem(p.id)} className="text-red-500 text-xs">hapus</button></td>
             </tr>
           ))}
         </tbody>

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getProducts, saveSale, Product } from '@/lib/db'
+import { db, Product } from '@/lib/db'
 
 export default function KasirPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -8,9 +8,7 @@ export default function KasirPage() {
   const [search, setSearch] = useState('')
   const [msg, setMsg] = useState('')
 
-  async function load() {
-    setProducts(await getProducts())
-  }
+  async function load() { setProducts(await db.products.toArray()) }
   useEffect(() => { load() }, [])
 
   function addToCart(p: Product) {
@@ -25,18 +23,27 @@ export default function KasirPage() {
 
   async function checkout(method: string) {
     if (!cart.length) return
-    const stockMap: Record<string, number> = {}
-    cart.forEach(c => stockMap[c.product.id] = c.qty)
+    
+    // Gunakan Dexie Transaction agar aman
+    await db.transaction('rw', db.products, db.sales, async () => {
+      // 1. Simpan transaksi
+      await db.sales.add({
+        id: crypto.randomUUID(),
+        total,
+        method,
+        created_at: new Date().toISOString(),
+        items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
+      })
+      
+      // 2. Kurangi stok
+      for (const item of cart) {
+        const prod = await db.products.get(item.product.id)
+        if (prod) {
+          await db.products.update(item.product.id, { stock_qty: prod.stock_qty - item.qty })
+        }
+      }
+    })
 
-    const saleData = {
-      id: crypto.randomUUID(),
-      total,
-      method,
-      created_at: new Date().toISOString(),
-      items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
-    }
-
-    await saveSale(saleData, stockMap)
     setMsg('Transaksi Berhasil!')
     setCart([])
     load()

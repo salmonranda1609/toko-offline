@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 const files = {}
 
 files['package.json'] = JSON.stringify({
-  name: 'toko-offline',
+  name: 'toko-dexie',
   version: '0.1.0',
   private: true,
   scripts: {
@@ -14,7 +14,7 @@ files['package.json'] = JSON.stringify({
     start: 'next start',
   },
   dependencies: {
-    idb: '^8.0.0',
+    dexie: '^4.0.8',
     next: '^14.2.15',
     'next-pwa': '^5.6.0',
     react: '^18.3.1',
@@ -53,16 +53,14 @@ files['tsconfig.json'] = JSON.stringify({
   exclude: ['node_modules'],
 }, null, 2)
 
-files['next-env.d.ts'] = `/// <reference types="next" />
-/// <reference types="next/image-types/global" />
-`
+files['next-env.d.ts'] = `/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n`
 
 files['next.config.js'] = `/** @type {import('next').NextConfig} */
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Aktif di production
+  disable: process.env.NODE_ENV === 'development',
 })
 module.exports = withPWA({ reactStrictMode: true })
 `
@@ -75,16 +73,13 @@ module.exports = {
 }
 `
 
-files['postcss.config.js'] = `module.exports = {
-  plugins: { tailwindcss: {}, autoprefixer: {} },
-}
-`
+files['postcss.config.js'] = `module.exports = {\n  plugins: { tailwindcss: {}, autoprefixer: {} },\n}\n`
 
 files['.gitignore'] = `node_modules\n.next\nout\npublic/sw.js\npublic/sw.js.map\npublic/workbox-*.js\npublic/workbox-*.js.map\n.DS_Store\n`
 
 files['public/manifest.json'] = JSON.stringify({
   name: 'Toko Offline POS',
-  short_name: 'TokoOffline',
+  short_name: 'TokoKu',
   start_url: '/kasir',
   display: 'standalone',
   background_color: '#ffffff',
@@ -97,112 +92,66 @@ files['public/manifest.json'] = JSON.stringify({
 files['public/icons/.gitkeep'] = ''
 
 // ==========================================
-// DATABASE LOKAL (INDEXED DB)
+// DATABASE LOKAL (DEXIE)
 // ==========================================
-files['lib/db.ts'] = `import { openDB, DBSchema } from 'idb'
+files['lib/db.ts'] = `import Dexie, { type EntityTable } from 'dexie'
 
-export type Product = { id: string; name: string; price: number; cost: number; stock_qty: number }
-export type Supplier = { id: string; name: string; contact: string; address: string }
-export type Sale = { id: string; total: number; method: string; created_at: string; items: any[] }
-export type Purchase = { id: string; supplier_id: string; total: number; status: string; created_at: string; items: any[] }
-
-interface TokoDB extends DBSchema {
-  products: { key: string; value: Product }
-  suppliers: { key: string; value: Supplier }
-  sales: { key: string; value: Sale }
-  purchases: { key: string; value: Purchase }
+export interface Product {
+  id: string
+  name: string
+  price: number
+  cost: number
+  stock_qty: number
 }
 
-export const getDB = () => {
-  if (typeof window === 'undefined') return null
-  return openDB<TokoDB>('toko-offline', 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('products')) db.createObjectStore('products', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('suppliers')) db.createObjectStore('suppliers', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('sales')) db.createObjectStore('sales', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('purchases')) db.createObjectStore('purchases', { keyPath: 'id' })
-    },
-  })
+export interface Supplier {
+  id: string
+  name: string
+  contact: string
 }
 
-// --- FUNGSI PRODUK ---
-export async function getProducts() {
-  const db = await getDB(); if (!db) return []
-  return db.getAll('products')
-}
-export async function saveProduct(p: Product) {
-  const db = await getDB(); if (!db) return
-  await db.put('products', p)
-}
-export async function deleteProduct(id: string) {
-  const db = await getDB(); if (!db) return
-  await db.delete('products', id)
+export interface Sale {
+  id: string
+  total: number
+  method: string
+  created_at: string
+  items: any[] 
 }
 
-// --- FUNGSI SUPPLIER ---
-export async function getSuppliers() {
-  const db = await getDB(); if (!db) return []
-  return db.getAll('suppliers')
-}
-export async function saveSupplier(s: Supplier) {
-  const db = await getDB(); if (!db) return
-  await db.put('suppliers', s)
-}
-export async function deleteSupplier(id: string) {
-  const db = await getDB(); if (!db) return
-  await db.delete('suppliers', id)
+export interface Purchase {
+  id: string
+  supplier_id: string
+  total: number
+  status: 'sent' | 'received'
+  created_at: string
+  items: any[]
 }
 
-// --- FUNGSI PENJUALAN (KASIR) ---
-export async function saveSale(sale: Sale, newStock: Record<string, number>) {
-  const db = await getDB(); if (!db) return
-  const tx = db.transaction(['sales', 'products'], 'readwrite')
-  await tx.objectStore('sales').put(sale)
-  for (const [prodId, qty] of Object.entries(newStock)) {
-    const prod = await tx.objectStore('products').get(prodId)
-    if (prod) {
-      prod.stock_qty -= qty
-      await tx.objectStore('products').put(prod)
-    }
-  }
-  await tx.done
+// Inisialisasi Database Dexie
+const db = new Dexie('TokoKelontongDB') as Dexie & {
+  products: EntityTable<Product, 'id'>
+  suppliers: EntityTable<Supplier, 'id'>
+  sales: EntityTable<Sale, 'id'>
+  purchases: EntityTable<Purchase, 'id'>
 }
 
-// --- FUNGSI PEMBELIAN ---
-export async function getPurchases() {
-  const db = await getDB(); if (!db) return []
-  return db.getAll('purchases')
-}
-export async function savePurchase(p: Purchase) {
-  const db = await getDB(); if (!db) return
-  await db.put('purchases', p)
-}
-export async function receivePurchase(purchase: Purchase, costData: Record<string, number>) {
-  const db = await getDB(); if (!db) return
-  const tx = db.transaction(['purchases', 'products'], 'readwrite')
-  purchase.status = 'received'
-  purchase.total = Object.values(costData).reduce((a, b) => a + b, 0) // total modal
-  await tx.objectStore('purchases').put(purchase)
-  
-  for (const item of purchase.items) {
-    const prod = await tx.objectStore('products').get(item.product_id)
-    if (prod) {
-      prod.stock_qty += item.qty
-      prod.cost = costData[item.product_id] / item.qty
-      await tx.objectStore('products').put(prod)
-    }
-  }
-  await tx.done
-}
+db.version(1).stores({
+  products: 'id, name', // id adalah primary key
+  suppliers: 'id, name',
+  sales: 'id, created_at',
+  purchases: 'id, created_at, status'
+})
 
-// --- EXPORT / IMPORT DATA (BACKUP) ---
+export { db }
+
+// --- FUNGSI BACKUP ---
 export async function exportData() {
-  const db = await getDB(); if (!db) return
+  if (typeof window === 'undefined') return
   const data = {
-    products: await db.getAll('products'),
-    suppliers: await db.getAll('suppliers'),
-    sales: await db.getAll('sales'),
-    purchases: await db.getAll('purchases')
+    products: await db.products.toArray(),
+    suppliers: await db.suppliers.toArray(),
+    sales: await db.sales.toArray(),
+    purchases: await db.purchases.toArray()
   }
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -222,16 +171,8 @@ files['app/layout.tsx'] = `import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Nav } from '@/components/Nav'
 
-export const metadata: Metadata = {
-  title: 'Toko Offline POS',
-  manifest: '/manifest.json',
-}
-
-export const viewport: Viewport = {
-  themeColor: '#2563eb',
-  width: 'device-width',
-  initialScale: 1,
-}
+export const metadata: Metadata = { title: 'Toko Offline POS', manifest: '/manifest.json' }
+export const viewport: Viewport = { themeColor: '#2563eb', width: 'device-width', initialScale: 1 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -282,7 +223,7 @@ export function Nav() {
 // ==========================================
 files['app/kasir/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
-import { getProducts, saveSale, Product } from '@/lib/db'
+import { db, Product } from '@/lib/db'
 
 export default function KasirPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -290,9 +231,7 @@ export default function KasirPage() {
   const [search, setSearch] = useState('')
   const [msg, setMsg] = useState('')
 
-  async function load() {
-    setProducts(await getProducts())
-  }
+  async function load() { setProducts(await db.products.toArray()) }
   useEffect(() => { load() }, [])
 
   function addToCart(p: Product) {
@@ -307,18 +246,27 @@ export default function KasirPage() {
 
   async function checkout(method: string) {
     if (!cart.length) return
-    const stockMap: Record<string, number> = {}
-    cart.forEach(c => stockMap[c.product.id] = c.qty)
+    
+    // Gunakan Dexie Transaction agar aman
+    await db.transaction('rw', db.products, db.sales, async () => {
+      // 1. Simpan transaksi
+      await db.sales.add({
+        id: crypto.randomUUID(),
+        total,
+        method,
+        created_at: new Date().toISOString(),
+        items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
+      })
+      
+      // 2. Kurangi stok
+      for (const item of cart) {
+        const prod = await db.products.get(item.product.id)
+        if (prod) {
+          await db.products.update(item.product.id, { stock_qty: prod.stock_qty - item.qty })
+        }
+      }
+    })
 
-    const saleData = {
-      id: crypto.randomUUID(),
-      total,
-      method,
-      created_at: new Date().toISOString(),
-      items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
-    }
-
-    await saveSale(saleData, stockMap)
     setMsg('Transaksi Berhasil!')
     setCart([])
     load()
@@ -367,19 +315,19 @@ export default function KasirPage() {
 // ==========================================
 files['app/produk/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
-import { getProducts, saveProduct, deleteProduct, Product } from '@/lib/db'
+import { db, Product } from '@/lib/db'
 
 export default function ProdukPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', price: '', cost: '', stock_qty: '' })
 
-  async function load() { setProducts(await getProducts()) }
+  async function load() { setProducts(await db.products.toArray()) }
   useEffect(() => { load() }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    await saveProduct({
+    await db.products.add({
       id: crypto.randomUUID(),
       name: form.name,
       price: Number(form.price),
@@ -388,6 +336,12 @@ export default function ProdukPage() {
     })
     setForm({ name: '', price: '', cost: '', stock_qty: '' })
     setShowForm(false)
+    load()
+  }
+
+  async function deleteItem(id: string) {
+    if (!confirm('Hapus produk ini?')) return
+    await db.products.delete(id)
     load()
   }
 
@@ -417,7 +371,7 @@ export default function ProdukPage() {
               <td className="p-2">{p.name}</td>
               <td className="p-2 text-right">Rp {p.price.toLocaleString()}</td>
               <td className="p-2 text-right">{p.stock_qty}</td>
-              <td className="p-2 text-right"><button onClick={() => { if(confirm('Hapus?')) { deleteProduct(p.id); load() } }} className="text-red-500 text-xs">hapus</button></td>
+              <td className="p-2 text-right"><button onClick={() => deleteItem(p.id)} className="text-red-500 text-xs">hapus</button></td>
             </tr>
           ))}
         </tbody>
@@ -432,18 +386,18 @@ export default function ProdukPage() {
 // ==========================================
 files['app/pemasok/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
-import { getSuppliers, saveSupplier, deleteSupplier, Supplier } from '@/lib/db'
+import { db, Supplier } from '@/lib/db'
 
 export default function PemasokPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [form, setForm] = useState({ name: '', contact: '' })
 
-  async function load() { setSuppliers(await getSuppliers()) }
+  async function load() { setSuppliers(await db.suppliers.toArray()) }
   useEffect(() => { load() }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    await saveSupplier({ id: crypto.randomUUID(), name: form.name, contact: form.contact, address: '' })
+    await db.suppliers.add({ id: crypto.randomUUID(), name: form.name, contact: form.contact })
     setForm({ name: '', contact: '' })
     load()
   }
@@ -453,7 +407,7 @@ export default function PemasokPage() {
       <h1 className="text-xl font-bold">Pemasok</h1>
       <form onSubmit={handleSave} className="bg-white p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2">
         <input className="border p-2 rounded" placeholder="Nama Pemasok" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-        <input className="border p-2 rounded" placeholder="No WhatsApp (ex: 0812...)" value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
+        <input className="border p-2 rounded" placeholder="No WA (0812...)" value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
         <button className="bg-blue-600 text-white p-2 rounded">Tambah</button>
       </form>
 
@@ -464,7 +418,7 @@ export default function PemasokPage() {
             <tr key={s.id} className="border-t">
               <td className="p-2">{s.name}</td>
               <td className="p-2">{s.contact}</td>
-              <td className="p-2 text-right"><button onClick={() => { if(confirm('Hapus?')) { deleteSupplier(s.id); load() } }} className="text-red-500 text-xs">hapus</button></td>
+              <td className="p-2 text-right"><button onClick={async () => { if(confirm('Hapus?')) { await db.suppliers.delete(s.id); load() } }} className="text-red-500 text-xs">hapus</button></td>
             </tr>
           ))}
         </tbody>
@@ -475,11 +429,11 @@ export default function PemasokPage() {
 `
 
 // ==========================================
-// HALAMAN PEMBELIAN (WA BUTUH INTERNET)
+// HALAMAN PEMBELIAN
 // ==========================================
 files['app/pembelian/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
-import { getSuppliers, getProducts, getPurchases, savePurchase, receivePurchase, Supplier, Product, Purchase } from '@/lib/db'
+import { db, Supplier, Product, Purchase } from '@/lib/db'
 
 export default function PembelianPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -493,9 +447,9 @@ export default function PembelianPage() {
   const [msg, setMsg] = useState('')
 
   async function load() {
-    setSuppliers(await getSuppliers())
-    setProducts(await getProducts())
-    setPurchases(await getPurchases())
+    setSuppliers(await db.suppliers.toArray())
+    setProducts(await db.products.toArray())
+    setPurchases(await db.purchases.reverse().toArray()) // Urutkan dari yg terbaru
   }
   useEffect(() => { load() }, [])
 
@@ -509,7 +463,7 @@ export default function PembelianPage() {
   async function submitOrder() {
     if (!supplierId || !draft.length) return setMsg('Pilih pemasok dan item.')
     
-    await savePurchase({
+    await db.purchases.add({
       id: crypto.randomUUID(),
       supplier_id: supplierId,
       total: 0,
@@ -518,7 +472,6 @@ export default function PembelianPage() {
       items: draft.map(d => ({ product_id: d.product.id, qty: d.qty }))
     })
 
-    // Buka WA (butuh internet)
     const sup = suppliers.find(s => s.id === supplierId)
     if (sup?.contact) {
       const wa = sup.contact.replace(/\\D/g, '').replace(/^0/, '62')
@@ -536,15 +489,23 @@ export default function PembelianPage() {
     const input = prompt('Masukkan Harga Modal Total (Rp) untuk pesanan ini:')
     if (!input) return
     const totalCost = Number(input)
-    const costData: Record<string, number> = {}
-    let remaining = totalCost
-    p.items.forEach((item, index) => {
-      // Bagi rata sementara jika hanya input total, idealnya input per item
-      const cost = index === p.items.length - 1 ? remaining : Math.floor(totalCost / p.items.length)
-      costData[item.product_id] = cost
-      remaining -= cost
+    
+    await db.transaction('rw', db.products, db.purchases, async () => {
+      await db.purchases.update(p.id, { status: 'received', total: totalCost })
+      
+      // Bagi rata harga modal ke tiap barang (sementara)
+      const costPerItem = Math.floor(totalCost / p.items.length)
+      
+      for (const item of p.items) {
+        const prod = await db.products.get(item.product_id)
+        if (prod) {
+          await db.products.update(item.product_id, { 
+            stock_qty: prod.stock_qty + item.qty,
+            cost: costPerItem / item.qty 
+          })
+        }
+      }
     })
-    await receivePurchase(p, costData)
     load()
   }
 
@@ -600,7 +561,7 @@ export default function PembelianPage() {
 // ==========================================
 files['app/laporan/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
-import { getDB, getProducts, exportData, Product } from '@/lib/db'
+import { db, exportData, Product } from '@/lib/db'
 
 export default function LaporanPage() {
   const [totalToday, setTotalToday] = useState(0)
@@ -609,17 +570,14 @@ export default function LaporanPage() {
 
   useEffect(() => {
     (async () => {
-      const db = await getDB()
-      if (!db) return
-      
       const today = new Date().toISOString().split('T')[0]
-      const allSales = await db.getAll('sales')
+      const allSales = await db.sales.toArray()
       const todaySales = allSales.filter(s => s.created_at.startsWith(today))
       
       setTotalToday(todaySales.reduce((a, b) => a + b.total, 0))
       setTrxCount(todaySales.length)
 
-      const prods = await getProducts()
+      const prods = await db.products.toArray()
       setLowStock(prods.filter(p => p.stock_qty <= 5))
     })()
   }, [])
@@ -665,7 +623,7 @@ async function main() {
     console.log('  ✓', path)
     count++
   }
-  console.log(`\n✅ ${count} file dibuat (Versi 100% Offline).\n`)
+  console.log(`\n✅ ${count} file dibuat (Versi Dexie.js Offline).\n`)
   console.log('Langkah menjalankan:')
   console.log('  1. npm install')
   console.log('  2. npm run dev')

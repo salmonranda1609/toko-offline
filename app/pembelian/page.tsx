@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getSuppliers, getProducts, getPurchases, savePurchase, receivePurchase, Supplier, Product, Purchase } from '@/lib/db'
+import { db, Supplier, Product, Purchase } from '@/lib/db'
 
 export default function PembelianPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -14,9 +14,9 @@ export default function PembelianPage() {
   const [msg, setMsg] = useState('')
 
   async function load() {
-    setSuppliers(await getSuppliers())
-    setProducts(await getProducts())
-    setPurchases(await getPurchases())
+    setSuppliers(await db.suppliers.toArray())
+    setProducts(await db.products.toArray())
+    setPurchases(await db.purchases.reverse().toArray()) // Urutkan dari yg terbaru
   }
   useEffect(() => { load() }, [])
 
@@ -30,7 +30,7 @@ export default function PembelianPage() {
   async function submitOrder() {
     if (!supplierId || !draft.length) return setMsg('Pilih pemasok dan item.')
     
-    await savePurchase({
+    await db.purchases.add({
       id: crypto.randomUUID(),
       supplier_id: supplierId,
       total: 0,
@@ -39,7 +39,6 @@ export default function PembelianPage() {
       items: draft.map(d => ({ product_id: d.product.id, qty: d.qty }))
     })
 
-    // Buka WA (butuh internet)
     const sup = suppliers.find(s => s.id === supplierId)
     if (sup?.contact) {
       const wa = sup.contact.replace(/\D/g, '').replace(/^0/, '62')
@@ -57,15 +56,23 @@ export default function PembelianPage() {
     const input = prompt('Masukkan Harga Modal Total (Rp) untuk pesanan ini:')
     if (!input) return
     const totalCost = Number(input)
-    const costData: Record<string, number> = {}
-    let remaining = totalCost
-    p.items.forEach((item, index) => {
-      // Bagi rata sementara jika hanya input total, idealnya input per item
-      const cost = index === p.items.length - 1 ? remaining : Math.floor(totalCost / p.items.length)
-      costData[item.product_id] = cost
-      remaining -= cost
+    
+    await db.transaction('rw', db.products, db.purchases, async () => {
+      await db.purchases.update(p.id, { status: 'received', total: totalCost })
+      
+      // Bagi rata harga modal ke tiap barang (sementara)
+      const costPerItem = Math.floor(totalCost / p.items.length)
+      
+      for (const item of p.items) {
+        const prod = await db.products.get(item.product_id)
+        if (prod) {
+          await db.products.update(item.product_id, { 
+            stock_qty: prod.stock_qty + item.qty,
+            cost: costPerItem / item.qty 
+          })
+        }
+      }
     })
-    await receivePurchase(p, costData)
     load()
   }
 

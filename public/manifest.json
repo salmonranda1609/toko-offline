@@ -1,6 +1,6 @@
 {
   "name": "Toko Offline POS",
-  "short_name": "TokoOffline",
+  "short_name": "TokoKu",
   "start_url": "/kasir",
   "display": "standalone",
   "background_color": "#ffffff",
