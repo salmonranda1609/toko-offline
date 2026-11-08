@@ -71,7 +71,7 @@ export default function PembelianPage() {
   }
 
   function openReceiveModal(p: Purchase, e: React.MouseEvent) {
-    e.stopPropagation() // Mencegah modal detail terbuka saat klik tombol terima
+    e.stopPropagation()
     setReceiveData(p)
     const initialCosts: Record<string, string> = {}
     p.items.forEach(item => { initialCosts[item.product_id] = '' })
@@ -94,7 +94,6 @@ export default function PembelianPage() {
     }
 
     await db.transaction('rw', db.products, db.purchases, async () => {
-      // Simpan harga per pcs ke dalam array items agar bisa dilihat di detail
       const updatedItems = receiveData.items.map(item => ({
         ...item,
         cost_per_pcs: hargaPerPcsMap[item.product_id]
@@ -120,6 +119,14 @@ export default function PembelianPage() {
     setReceiveData(null)
     load()
   }
+
+  // --- LOGIKA GROUPING PER PEMASOK ---
+  const groupedPurchases = suppliers.map(sup => {
+    return {
+      supplier: sup,
+      history: purchases.filter(p => p.supplier_id === sup.id)
+    }
+  }).filter(group => group.history.length > 0) // Hanya tampilkan pemasok yang punya riwayat
 
   return (
     <div className="p-4 pb-24 space-y-4 relative">
@@ -155,62 +162,67 @@ export default function PembelianPage() {
         {msg && <p className="text-blue-600 text-sm">{msg}</p>}
       </div>
 
-      {/* TABEL RIWAYAT PEMBELIAN */}
-      <h2 className="font-semibold text-lg pt-2">Riwayat Pembelian</h2>
-      <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat rincian barang</p>
+      {/* RIWAYAT PEMBELIAN (DI-GROUPING) */}
+      <div className="space-y-6 pt-2">
+        <h2 className="font-semibold text-lg">Riwayat Pembelian (Per Pemasok)</h2>
+        
+        {groupedPurchases.length === 0 && (
+          <p className="text-sm text-gray-500">Belum ada riwayat pembelian.</p>
+        )}
 
-      <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-100 text-left text-gray-700 font-bold border-b">
-              <th className="p-3">Pemasok</th>
-              <th className="p-3 text-right">Total Modal</th>
-              <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-center">Tanggal</th>
-              <th className="p-3 text-center">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchases.map(p => {
-              const sup = suppliers.find(s => s.id === p.supplier_id)
-              return (
-                <tr 
-                  key={p.id} 
-                  onClick={() => setDetailPurchase(p)}
-                  className="border-b last:border-0 hover:bg-blue-50 cursor-pointer transition-colors"
-                >
-                  <td className="p-3">{sup?.name || 'Pemasok'}</td>
-                  <td className="p-3 text-right">
-                    {p.total > 0 ? `Rp ${p.total.toLocaleString()}` : '-'}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      p.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-center whitespace-nowrap">
-                    {new Date(p.created_at).toLocaleDateString('id-ID')}
-                  </td>
-                  <td className="p-3 text-center">
-                    {p.status === 'sent' && (
-                      <button 
-                        onClick={(e) => openReceiveModal(p, e)} 
-                        className="text-green-600 font-bold text-xs hover:underline px-2 py-1 bg-green-50 rounded"
-                      >
-                        terima
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-            {purchases.length === 0 && (
-              <tr><td colSpan={5} className="p-4 text-center text-gray-500">Belum ada riwayat pembelian.</td></tr>
-            )}
-          </tbody>
-        </table>
+        {groupedPurchases.map(({ supplier, history }) => (
+          <div key={supplier.id} className="space-y-2">
+            <h3 className="font-bold text-blue-800 bg-blue-50 inline-block px-3 py-1 rounded-lg border border-blue-100">
+              🏭 {supplier.name}
+            </h3>
+            
+            <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-gray-700 font-bold border-b">
+                    <th className="p-3">Tanggal</th>
+                    <th className="p-3 text-right">Total Modal</th>
+                    <th className="p-3 text-center">Status</th>
+                    <th className="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map(p => (
+                    <tr 
+                      key={p.id} 
+                      onClick={() => setDetailPurchase(p)}
+                      className="border-b last:border-0 hover:bg-blue-50 cursor-pointer transition-colors"
+                    >
+                      <td className="p-3 whitespace-nowrap">
+                        {new Date(p.created_at).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="p-3 text-right">
+                        {p.total > 0 ? `Rp ${p.total.toLocaleString()}` : '-'}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          p.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {p.status === 'sent' && (
+                          <button 
+                            onClick={(e) => openReceiveModal(p, e)} 
+                            className="text-green-600 font-bold text-xs hover:underline px-2 py-1 bg-green-50 rounded"
+                          >
+                            terima
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* MODAL 1: INPUT HARGA MODAL (SAAT TERIMA BARANG) */}
