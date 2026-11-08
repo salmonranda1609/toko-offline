@@ -7,28 +7,42 @@ export default function PembelianPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [purchases, setPurchases] = useState<Purchase[]>([])
   
+  // State Form Pesanan
   const [supplierId, setSupplierId] = useState('')
   const [productPick, setProductPick] = useState('')
   const [qty, setQty] = useState('1')
   const [draft, setDraft] = useState<{ product: Product, qty: number }[]>([])
   const [msg, setMsg] = useState('')
 
+  // State Modal Terima Barang
+  const [receiveData, setReceiveData] = useState<Purchase | null>(null)
+  const [costInputs, setCostInputs] = useState<Record<string, string>>({})
+
   async function load() {
     setSuppliers(await db.suppliers.toArray())
     setProducts(await db.products.toArray())
-    setPurchases(await db.purchases.reverse().toArray()) // Urutkan dari yg terbaru
+    const allPurchases = await db.purchases.toArray()
+    setPurchases(allPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
   }
+  
   useEffect(() => { load() }, [])
 
   function addItem() {
     const prod = products.find(x => x.id === productPick)
     if (!prod || Number(qty) <= 0) return
-    setDraft(prev => [...prev, { product: prod, qty: Number(qty) }])
-    setProductPick(''); setQty('1')
+    
+    setDraft(prev => {
+      const found = prev.find(d => d.product.id === prod.id)
+      if (found) return prev.map(d => d.product.id === prod.id ? { ...d, qty: d.qty + Number(qty) } : d)
+      return [...prev, { product: prod, qty: Number(qty) }]
+    })
+    
+    setProductPick(''); 
+    setQty('1')
   }
 
   async function submitOrder() {
-    if (!supplierId || !draft.length) return setMsg('Pilih pemasok dan item.')
+    if (!supplierId || !draft.length) return setMsg('Pilih pemasok dan minimal 1 item.')
     
     await db.purchases.add({
       id: crypto.randomUUID(),
@@ -36,7 +50,7 @@ export default function PembelianPage() {
       total: 0,
       status: 'sent',
       created_at: new Date().toISOString(),
-      items: draft.map(d => ({ product_id: d.product.id, qty: d.qty }))
+      items: draft.map(d => ({ product_id: d.product.id, name: d.product.name, qty: d.qty })) // Simpan nama barang juga
     })
 
     const sup = suppliers.find(s => s.id === supplierId)
@@ -47,77 +61,184 @@ export default function PembelianPage() {
       window.open(`https://wa.me/${wa}?text=${encodeURIComponent(text)}`, '_blank')
     }
 
-    setDraft([]); setSupplierId(''); setMsg('Pesanan dibuat!')
+    setDraft([]); 
+    setSupplierId(''); 
+    setMsg('Pesanan dibuat & WA dibuka!')
     load()
   }
 
-  // Fungsi Terima Barang
-  async function handleReceive(p: Purchase) {
-    const input = prompt('Masukkan Harga Modal Total (Rp) untuk pesanan ini:')
-    if (!input) return
-    const totalCost = Number(input)
+  // Membuka Modal Input Harga
+  function openReceiveModal(p: Purchase) {
+    setReceiveData(p)
+    // Inisialisasi input kosong untuk tiap barang
+    const initialCosts: Record<string, string> = {}
+    p.items.forEach(item => { initialCosts[item.product_id] = '' })
+    setCostInputs(initialCosts)
+  }
+
+  // Menyimpan Harga Modal
+  async function handleSaveReceive() {
+    if (!receiveData) return
+
+    // Hitung total modal
+    let totalCost = 0
+    const costPerProduct: Record<string, number> = {}
     
+    for (const item of receiveData.items) {
+      const inputVal = Number(costInputs[item.product_id])
+      if (isNaN(inputVal) || inputVal <= 0) {
+        return alert('Harap isi semua harga modal dengan benar.')
+      }
+      totalCost += inputVal
+      costPerProduct[item.product_id] = inputVal
+    }
+
     await db.transaction('rw', db.products, db.purchases, async () => {
-      await db.purchases.update(p.id, { status: 'received', total: totalCost })
+      // 1. Update status pesanan
+      await db.purchases.update(receiveData.id, { status: 'received', total: totalCost })
       
-      // Bagi rata harga modal ke tiap barang (sementara)
-      const costPerItem = Math.floor(totalCost / p.items.length)
-      
-      for (const item of p.items) {
+      // 2. Tambah stok produk & update harga modal per pcs
+      for (const item of receiveData.items) {
         const prod = await db.products.get(item.product_id)
         if (prod) {
+          const totalItemCost = costPerProduct[item.product_id]
+          const costPerPcs = totalItemCost / item.qty
+
           await db.products.update(item.product_id, { 
             stock_qty: prod.stock_qty + item.qty,
-            cost: costPerItem / item.qty 
+            cost: costPerPcs // Harga modal per pcs
           })
         }
       }
     })
+    
+    setReceiveData(null)
     load()
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 relative">
       <h1 className="text-xl font-bold">Pembelian</h1>
       
-      <div className="bg-white p-3 border rounded space-y-2">
-        <div className="flex gap-2 flex-wrap">
-          <select className="border p-2 rounded flex-1" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
-            <option value="">-- Pemasok --</option>
+      {/* FORM BUAT PESANAN */}
+      <div className="bg-white p-3 border rounded-lg shadow-sm space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <select className="border p-2 rounded bg-gray-50" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
+            <option value="">-- Pilih Pemasok --</option>
             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <select className="border p-2 rounded flex-1" value={productPick} onChange={e => setProductPick(e.target.value)}>
-            <option value="">-- Produk --</option>
-            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <input type="number" className="border p-2 rounded w-20" value={qty} onChange={e => setQty(e.target.value)} />
-          <button onClick={addItem} className="bg-gray-800 text-white px-3 rounded">+</button>
+          
+          <div className="flex gap-2">
+            <select className="border p-2 rounded bg-gray-50 flex-1" value={productPick} onChange={e => setProductPick(e.target.value)}>
+              <option value="">-- Pilih Produk --</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <input type="number" className="border p-2 rounded w-16 text-center" value={qty} onChange={e => setQty(e.target.value)} />
+            <button onClick={addItem} className="bg-gray-800 text-white px-4 rounded font-bold">+</button>
+          </div>
         </div>
         
-        {draft.map((d, i) => <div key={i} className="text-sm">{d.product.name} - {d.qty} pcs</div>)}
+        {draft.length > 0 && (
+          <div className="bg-gray-50 p-2 rounded text-sm mb-2">
+            {draft.map((d, i) => <div key={i}>{d.product.name} - {d.qty} pcs</div>)}
+          </div>
+        )}
         
-        <button onClick={submitOrder} className="bg-blue-600 text-white px-4 py-2 rounded w-full">Pesan & WA</button>
+        <button onClick={submitOrder} className="bg-blue-600 text-white px-4 py-2 rounded w-full font-semibold">
+          Buat Pesanan & Kirim WA
+        </button>
         {msg && <p className="text-blue-600 text-sm">{msg}</p>}
       </div>
 
-      <table className="w-full bg-white border text-sm">
-        <thead><tr className="bg-gray-100 text-left"><th className="p-2">Tanggal</th><th className="p-2">Status</th><th className="p-2">Total Modal</th><th className="p-2">Aksi</th></tr></thead>
-        <tbody>
-          {purchases.map(p => {
-            const sup = suppliers.find(s => s.id === p.supplier_id)
-            return (
-              <tr key={p.id} className="border-t">
-                <td className="p-2">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
-                <td className="p-2">{sup?.name || 'Pemasok'} ({p.status})</td>
-                <td className="p-2">{p.total ? 'Rp ' + p.total.toLocaleString() : '-'}</td>
-                <td className="p-2">
-                  {p.status === 'sent' && <button onClick={() => handleReceive(p)} className="text-green-600 font-bold text-xs">Terima</button>}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+      {/* TABEL RIWAYAT PEMBELIAN */}
+      <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-100 text-left text-gray-700 font-bold border-b">
+              <th className="p-3">Pemasok</th>
+              <th className="p-3 text-right">Total Modal</th>
+              <th className="p-3 text-center">Status</th>
+              <th className="p-3 text-center">Tanggal</th>
+              <th className="p-3 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchases.map(p => {
+              const sup = suppliers.find(s => s.id === p.supplier_id)
+              return (
+                <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="p-3">{sup?.name || 'Pemasok'}</td>
+                  <td className="p-3 text-right">
+                    {p.total > 0 ? `Rp ${p.total.toLocaleString()}` : '-'}
+                  </td>
+                  <td className="p-3 text-center">
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                      p.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center whitespace-nowrap">
+                    {new Date(p.created_at).toLocaleDateString('id-ID')}
+                  </td>
+                  <td className="p-3 text-center">
+                    {p.status === 'sent' && (
+                      <button 
+                        onClick={() => openReceiveModal(p)} 
+                        className="text-green-600 font-bold text-xs hover:underline"
+                      >
+                        terima
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+            {purchases.length === 0 && (
+              <tr><td colSpan={5} className="p-4 text-center text-gray-500">Belum ada riwayat pembelian.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* MODAL INPUT HARGA MODAL */}
+      {receiveData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-4 w-full max-w-sm space-y-4 shadow-xl">
+            <h2 className="font-bold text-lg">Penerimaan Barang</h2>
+            <p className="text-sm text-gray-600">Masukkan total harga modal sesuai nota supplier untuk masing-masing barang.</p>
+            
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {receiveData.items.map((item) => (
+                <div key={item.product_id} className="flex flex-col gap-1 border-b pb-2">
+                  <label className="text-sm font-medium">
+                    {item.name} <span className="text-gray-500 font-normal">({item.qty} pcs)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Rp</span>
+                    <input 
+                      type="number" 
+                      className="border p-2 rounded flex-1" 
+                      placeholder={`Harga ${item.qty} pcs`}
+                      value={costInputs[item.product_id] || ''}
+                      onChange={(e) => setCostInputs({ ...costInputs, [item.product_id]: e.target.value })}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setReceiveData(null)} className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50">
+                Batal
+              </button>
+              <button onClick={handleSaveReceive} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+                Simpan & Tambah Stok
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
