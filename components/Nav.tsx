@@ -14,8 +14,7 @@ export function Nav() {
   const pathname = usePathname()
   
   return (
-    // Hapus 'fixed', ganti dengan 'shrink-0' agar navbar tidak mengecil
-    <nav className="shrink-0 bg-white border-t flex justify-around items-center h-16 w-full z-40">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex justify-around items-center h-16 pb-safe">
       {links.map((l) => {
         const isActive = pathname === l.href
         return (
