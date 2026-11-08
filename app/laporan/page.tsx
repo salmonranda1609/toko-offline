@@ -3,14 +3,12 @@ import { useEffect, useState } from 'react'
 import { db, exportData, Sale, Product } from '@/lib/db'
 
 export default function LaporanPage() {
-  // State untuk Laporan
   const [sales, setSales] = useState<Sale[]>([])
   const [lowStock, setLowStock] = useState<Product[]>([])
   
-  // State Filter Tanggal (Default: Hari Ini format YYYY-MM-DD)
+  // State untuk Filter Tanggal
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date()
-    // Gunakan waktu lokal, bukan UTC, untuk default tanggal
     const offset = today.getTimezoneOffset() * 60000
     return new Date(today.getTime() - offset).toISOString().split('T')[0]
   })
@@ -20,17 +18,17 @@ export default function LaporanPage() {
   const [trxCount, setTrxCount] = useState(0)
   const [paymentSummary, setPaymentSummary] = useState<Record<string, number>>({})
 
+  // State untuk Modal Detail Transaksi
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. Ambil produk stok menipis
         const prods = await db.products.toArray()
         setLowStock(prods.filter(p => p.stock_qty <= 5))
 
-        // 2. Ambil semua transaksi
         const allSales = await db.sales.toArray()
         
-        // 3. Filter transaksi berdasarkan tanggal lokal (bukan UTC)
         const filteredSales = allSales.filter(s => {
           const dateObj = new Date(s.created_at)
           const offset = dateObj.getTimezoneOffset() * 60000
@@ -38,16 +36,13 @@ export default function LaporanPage() {
           return localISOTime === selectedDate
         })
         
-        // Urutkan dari yang terbaru
         filteredSales.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
         setSales(filteredSales)
         setTrxCount(filteredSales.length)
         
-        // 4. Hitung Total Pendapatan & Rekap Metode Pembayaran
         let total = 0
         const summary: Record<string, number> = {}
-
         filteredSales.forEach(s => {
           total += s.total
           if (!summary[s.method]) summary[s.method] = 0
@@ -56,21 +51,18 @@ export default function LaporanPage() {
 
         setTotalRevenue(total)
         setPaymentSummary(summary)
-
       } catch (error) {
         console.error("Gagal memuat laporan:", error)
       }
     }
 
     fetchData()
-  }, [selectedDate]) // Akan berjalan ulang setiap kali tanggal diubah
+  }, [selectedDate])
 
   return (
-    <div className="p-4 pb-24 space-y-4">
+    <div className="p-4 pb-24 space-y-4 relative">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Laporan</h1>
-        
-        {/* Input Filter Tanggal */}
         <input 
           type="date" 
           value={selectedDate} 
@@ -87,7 +79,6 @@ export default function LaporanPage() {
           <p className="text-xs mt-1 text-gray-600">Dari <strong className="text-gray-900">{trxCount}</strong> transaksi</p>
         </div>
         
-        {/* Rekap Metode Pembayaran */}
         <div className="bg-white border p-4 rounded shadow-sm">
           <p className="text-sm text-gray-500 mb-2">Rincian Metode Pembayaran</p>
           <div className="space-y-1">
@@ -107,6 +98,8 @@ export default function LaporanPage() {
 
       {/* Tabel Rincian Transaksi */}
       <h2 className="font-semibold text-lg pt-2">Rincian Transaksi</h2>
+      <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat detail barang</p>
+      
       <div className="bg-white border rounded overflow-hidden">
         <table className="w-full text-sm">
           <thead>
@@ -119,7 +112,11 @@ export default function LaporanPage() {
           </thead>
           <tbody>
             {sales.map((s) => (
-              <tr key={s.id} className="border-t hover:bg-gray-50">
+              <tr 
+                key={s.id} 
+                onClick={() => setSelectedSale(s)}
+                className="border-t hover:bg-blue-50 cursor-pointer transition-colors"
+              >
                 <td className="p-3">
                   {new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                 </td>
@@ -167,10 +164,48 @@ export default function LaporanPage() {
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mt-6">
         <h2 className="font-bold text-yellow-800 mb-2">Amankan Data Anda</h2>
         <p className="text-sm text-yellow-700 mb-3">Lakukan backup rutin agar data tidak hilang jika HP rusak atau cache terhapus.</p>
-        <button onClick={exportData} className="bg-yellow-600 text-white px-4 py-2 rounded font-bold w-full">
+        <button onClick={exportData} className="bg-yellow-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-yellow-700">
           Download Backup Data (JSON)
         </button>
       </div>
+
+      {/* MODAL DETAIL TRANSAKSI */}
+      {selectedSale && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+            <div className="border-b pb-3">
+              <h2 className="font-bold text-lg text-gray-900">Detail Transaksi</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(selectedSale.created_at).toLocaleString('id-ID')} • <span className="uppercase font-bold text-blue-600">{selectedSale.method}</span>
+              </p>
+            </div>
+            
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {selectedSale.items && selectedSale.items.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
+                  <div>
+                    <p className="font-semibold text-gray-800">{item.name}</p>
+                    <p className="text-xs text-gray-500">{item.qty} x Rp {item.price.toLocaleString()}</p>
+                  </div>
+                  <p className="font-medium">Rp {(item.qty * item.price).toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t mt-2">
+              <span className="font-bold text-gray-600">Total</span>
+              <span className="font-bold text-lg text-blue-600">Rp {selectedSale.total.toLocaleString()}</span>
+            </div>
+
+            <button 
+              onClick={() => setSelectedSale(null)} 
+              className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
