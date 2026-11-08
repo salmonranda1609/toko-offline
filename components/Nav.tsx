@@ -12,12 +12,18 @@ const links = [
 
 export function Nav() {
   const pathname = usePathname()
+  
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t flex justify-around items-center h-16">
+    // Hapus 'fixed', ganti dengan 'shrink-0' agar navbar tidak mengecil
+    <nav className="shrink-0 bg-white border-t flex justify-around items-center h-16 w-full z-40">
       {links.map((l) => {
         const isActive = pathname === l.href
         return (
-          <Link key={l.href} href={l.href} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+          <Link 
+            key={l.href} 
+            href={l.href} 
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}
+          >
             <span className="text-xl">{l.icon}</span>
             <span className="text-[10px] font-medium">{l.label}</span>
           </Link>

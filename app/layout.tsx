@@ -8,8 +8,12 @@ export const viewport: Viewport = { themeColor: '#2563eb', width: 'device-width'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body className="pb-16">
-        {children}
+      {/* Gunakan h-screen dan flex-col agar layout mengunci tinggi layar */}
+      <body className="h-screen flex flex-col bg-gray-50">
+        {/* flex-1 dan overflow-y-auto membuat area ini bisa digulir (scroll) */}
+        <main className="flex-1 overflow-y-auto pb-4">
+          {children}
+        </main>
         <Nav />
       </body>
     </html>
