@@ -18,11 +18,13 @@ export default function PembelianPage() {
   const [receiveData, setReceiveData] = useState<Purchase | null>(null)
   const [costInputs, setCostInputs] = useState<Record<string, string>>({})
 
+  // State Modal Detail Riwayat Pembelian
+  const [detailPurchase, setDetailPurchase] = useState<Purchase | null>(null)
+
   async function load() {
     setSuppliers(await db.suppliers.toArray())
     setProducts(await db.products.toArray())
     const allPurchases = await db.purchases.toArray()
-    // Urutkan dari yang terbaru
     setPurchases(allPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
   }
   
@@ -51,7 +53,7 @@ export default function PembelianPage() {
       total: 0,
       status: 'sent',
       created_at: new Date().toISOString(),
-      items: draft.map(d => ({ product_id: d.product.id, name: d.product.name, qty: d.qty }))
+      items: draft.map(d => ({ product_id: d.product.id, name: d.product.name, qty: d.qty, cost_per_pcs: 0 }))
     })
 
     const sup = suppliers.find(s => s.id === supplierId)
@@ -68,51 +70,48 @@ export default function PembelianPage() {
     load()
   }
 
-  // Membuka Modal Input Harga
-  function openReceiveModal(p: Purchase) {
+  function openReceiveModal(p: Purchase, e: React.MouseEvent) {
+    e.stopPropagation() // Mencegah modal detail terbuka saat klik tombol terima
     setReceiveData(p)
-    // Inisialisasi input kosong untuk tiap barang
     const initialCosts: Record<string, string> = {}
     p.items.forEach(item => { initialCosts[item.product_id] = '' })
     setCostInputs(initialCosts)
   }
 
-  // Menyimpan Harga Modal (Per Pcs)
   async function handleSaveReceive() {
     if (!receiveData) return
 
     let totalModalKeseluruhan = 0
     const hargaPerPcsMap: Record<string, number> = {}
     
-    // Validasi dan hitung total
     for (const item of receiveData.items) {
       const inputHargaPerPcs = Number(costInputs[item.product_id])
-      
       if (isNaN(inputHargaPerPcs) || inputHargaPerPcs <= 0) {
         return alert(`Harap isi harga untuk ${item.name} dengan benar.`)
       }
-      
-      // Simpan harga per pcs
       hargaPerPcsMap[item.product_id] = inputHargaPerPcs
-      
-      // Tambahkan ke total modal (Harga per pcs x Jumlah barang)
       totalModalKeseluruhan += (inputHargaPerPcs * item.qty)
     }
 
     await db.transaction('rw', db.products, db.purchases, async () => {
-      // 1. Update total belanja dan status pesanan
+      // Simpan harga per pcs ke dalam array items agar bisa dilihat di detail
+      const updatedItems = receiveData.items.map(item => ({
+        ...item,
+        cost_per_pcs: hargaPerPcsMap[item.product_id]
+      }))
+
       await db.purchases.update(receiveData.id, { 
         status: 'received', 
-        total: totalModalKeseluruhan 
+        total: totalModalKeseluruhan,
+        items: updatedItems
       })
       
-      // 2. Tambah stok produk & update harga modal (cost) per pcs di database
       for (const item of receiveData.items) {
         const prod = await db.products.get(item.product_id)
         if (prod) {
           await db.products.update(item.product_id, { 
             stock_qty: prod.stock_qty + item.qty,
-            cost: hargaPerPcsMap[item.product_id] // Simpan harga per pcs
+            cost: hargaPerPcsMap[item.product_id]
           })
         }
       }
@@ -123,7 +122,7 @@ export default function PembelianPage() {
   }
 
   return (
-    <div className="p-4 space-y-4 relative">
+    <div className="p-4 pb-24 space-y-4 relative">
       <h1 className="text-xl font-bold">Pembelian</h1>
       
       {/* FORM BUAT PESANAN */}
@@ -157,6 +156,9 @@ export default function PembelianPage() {
       </div>
 
       {/* TABEL RIWAYAT PEMBELIAN */}
+      <h2 className="font-semibold text-lg pt-2">Riwayat Pembelian</h2>
+      <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat rincian barang</p>
+
       <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           <thead>
@@ -172,7 +174,11 @@ export default function PembelianPage() {
             {purchases.map(p => {
               const sup = suppliers.find(s => s.id === p.supplier_id)
               return (
-                <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
+                <tr 
+                  key={p.id} 
+                  onClick={() => setDetailPurchase(p)}
+                  className="border-b last:border-0 hover:bg-blue-50 cursor-pointer transition-colors"
+                >
                   <td className="p-3">{sup?.name || 'Pemasok'}</td>
                   <td className="p-3 text-right">
                     {p.total > 0 ? `Rp ${p.total.toLocaleString()}` : '-'}
@@ -190,8 +196,8 @@ export default function PembelianPage() {
                   <td className="p-3 text-center">
                     {p.status === 'sent' && (
                       <button 
-                        onClick={() => openReceiveModal(p)} 
-                        className="text-green-600 font-bold text-xs hover:underline"
+                        onClick={(e) => openReceiveModal(p, e)} 
+                        className="text-green-600 font-bold text-xs hover:underline px-2 py-1 bg-green-50 rounded"
                       >
                         terima
                       </button>
@@ -207,7 +213,7 @@ export default function PembelianPage() {
         </table>
       </div>
 
-      {/* MODAL INPUT HARGA MODAL */}
+      {/* MODAL 1: INPUT HARGA MODAL (SAAT TERIMA BARANG) */}
       {receiveData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
@@ -250,6 +256,58 @@ export default function PembelianPage() {
                 Simpan & Tambah Stok
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: DETAIL RINCIAN PEMBELIAN */}
+      {detailPurchase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+            <div className="border-b pb-3">
+              <h2 className="font-bold text-lg text-gray-900">Detail Pembelian</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(detailPurchase.created_at).toLocaleString('id-ID')} • 
+                <span className={`ml-1 uppercase font-bold ${detailPurchase.status === 'received' ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {detailPurchase.status}
+                </span>
+              </p>
+            </div>
+            
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {detailPurchase.items.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-start text-sm border-b pb-2 last:border-0">
+                  <div>
+                    <p className="font-semibold text-gray-800">{item.name}</p>
+                    <p className="text-xs text-gray-500">{item.qty} pcs</p>
+                  </div>
+                  <div className="text-right">
+                    {item.cost_per_pcs > 0 ? (
+                      <>
+                        <p className="font-medium">Rp {(item.cost_per_pcs * item.qty).toLocaleString()}</p>
+                        <p className="text-[10px] text-gray-400">@ Rp {item.cost_per_pcs.toLocaleString()}/pcs</p>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Belum ada harga</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t mt-2">
+              <span className="font-bold text-gray-600">Total Modal</span>
+              <span className="font-bold text-lg text-blue-600">
+                {detailPurchase.total > 0 ? `Rp ${detailPurchase.total.toLocaleString()}` : '-'}
+              </span>
+            </div>
+
+            <button 
+              onClick={() => setDetailPurchase(null)} 
+              className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200"
+            >
+              Tutup
+            </button>
           </div>
         </div>
       )}
