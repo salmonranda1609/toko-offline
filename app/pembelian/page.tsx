@@ -22,6 +22,7 @@ export default function PembelianPage() {
     setSuppliers(await db.suppliers.toArray())
     setProducts(await db.products.toArray())
     const allPurchases = await db.purchases.toArray()
+    // Urutkan dari yang terbaru
     setPurchases(allPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
   }
   
@@ -50,7 +51,7 @@ export default function PembelianPage() {
       total: 0,
       status: 'sent',
       created_at: new Date().toISOString(),
-      items: draft.map(d => ({ product_id: d.product.id, name: d.product.name, qty: d.qty })) // Simpan nama barang juga
+      items: draft.map(d => ({ product_id: d.product.id, name: d.product.name, qty: d.qty }))
     })
 
     const sup = suppliers.find(s => s.id === supplierId)
@@ -63,7 +64,7 @@ export default function PembelianPage() {
 
     setDraft([]); 
     setSupplierId(''); 
-    setMsg('Pesanan dibuat & WA dibuka!')
+    setMsg('Pesanan dibuat & WhatsApp dibuka!')
     load()
   }
 
@@ -76,37 +77,42 @@ export default function PembelianPage() {
     setCostInputs(initialCosts)
   }
 
-  // Menyimpan Harga Modal
+  // Menyimpan Harga Modal (Per Pcs)
   async function handleSaveReceive() {
     if (!receiveData) return
 
-    // Hitung total modal
-    let totalCost = 0
-    const costPerProduct: Record<string, number> = {}
+    let totalModalKeseluruhan = 0
+    const hargaPerPcsMap: Record<string, number> = {}
     
+    // Validasi dan hitung total
     for (const item of receiveData.items) {
-      const inputVal = Number(costInputs[item.product_id])
-      if (isNaN(inputVal) || inputVal <= 0) {
-        return alert('Harap isi semua harga modal dengan benar.')
+      const inputHargaPerPcs = Number(costInputs[item.product_id])
+      
+      if (isNaN(inputHargaPerPcs) || inputHargaPerPcs <= 0) {
+        return alert(`Harap isi harga untuk ${item.name} dengan benar.`)
       }
-      totalCost += inputVal
-      costPerProduct[item.product_id] = inputVal
+      
+      // Simpan harga per pcs
+      hargaPerPcsMap[item.product_id] = inputHargaPerPcs
+      
+      // Tambahkan ke total modal (Harga per pcs x Jumlah barang)
+      totalModalKeseluruhan += (inputHargaPerPcs * item.qty)
     }
 
     await db.transaction('rw', db.products, db.purchases, async () => {
-      // 1. Update status pesanan
-      await db.purchases.update(receiveData.id, { status: 'received', total: totalCost })
+      // 1. Update total belanja dan status pesanan
+      await db.purchases.update(receiveData.id, { 
+        status: 'received', 
+        total: totalModalKeseluruhan 
+      })
       
-      // 2. Tambah stok produk & update harga modal per pcs
+      // 2. Tambah stok produk & update harga modal (cost) per pcs di database
       for (const item of receiveData.items) {
         const prod = await db.products.get(item.product_id)
         if (prod) {
-          const totalItemCost = costPerProduct[item.product_id]
-          const costPerPcs = totalItemCost / item.qty
-
           await db.products.update(item.product_id, { 
             stock_qty: prod.stock_qty + item.qty,
-            cost: costPerPcs // Harga modal per pcs
+            cost: hargaPerPcsMap[item.product_id] // Simpan harga per pcs
           })
         }
       }
@@ -139,12 +145,12 @@ export default function PembelianPage() {
         </div>
         
         {draft.length > 0 && (
-          <div className="bg-gray-50 p-2 rounded text-sm mb-2">
+          <div className="bg-gray-50 p-2 rounded text-sm mb-2 border">
             {draft.map((d, i) => <div key={i}>{d.product.name} - {d.qty} pcs</div>)}
           </div>
         )}
         
-        <button onClick={submitOrder} className="bg-blue-600 text-white px-4 py-2 rounded w-full font-semibold">
+        <button onClick={submitOrder} className="bg-blue-600 text-white px-4 py-2 rounded w-full font-semibold hover:bg-blue-700">
           Buat Pesanan & Kirim WA
         </button>
         {msg && <p className="text-blue-600 text-sm">{msg}</p>}
@@ -204,22 +210,24 @@ export default function PembelianPage() {
       {/* MODAL INPUT HARGA MODAL */}
       {receiveData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-sm space-y-4 shadow-xl">
-            <h2 className="font-bold text-lg">Penerimaan Barang</h2>
-            <p className="text-sm text-gray-600">Masukkan total harga modal sesuai nota supplier untuk masing-masing barang.</p>
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+            <div>
+              <h2 className="font-bold text-lg text-gray-900">Penerimaan Barang</h2>
+              <p className="text-sm text-gray-500 mt-1">Masukkan harga beli (modal) sesuai nota dari supplier.</p>
+            </div>
             
-            <div className="space-y-3 max-h-60 overflow-y-auto">
+            <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
               {receiveData.items.map((item) => (
-                <div key={item.product_id} className="flex flex-col gap-1 border-b pb-2">
-                  <label className="text-sm font-medium">
+                <div key={item.product_id} className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-gray-800">
                     {item.name} <span className="text-gray-500 font-normal">({item.qty} pcs)</span>
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">Rp</span>
+                    <span className="text-sm font-medium text-gray-600">Rp</span>
                     <input 
                       type="number" 
-                      className="border p-2 rounded flex-1" 
-                      placeholder={`Harga ${item.qty} pcs`}
+                      className="border border-gray-300 p-2.5 rounded-lg flex-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                      placeholder="Harga per pcs"
                       value={costInputs[item.product_id] || ''}
                       onChange={(e) => setCostInputs({ ...costInputs, [item.product_id]: e.target.value })}
                     />
@@ -228,11 +236,17 @@ export default function PembelianPage() {
               ))}
             </div>
 
-            <div className="flex gap-2 justify-end pt-2">
-              <button onClick={() => setReceiveData(null)} className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50">
+            <div className="flex gap-2 justify-end pt-2 border-t mt-4">
+              <button 
+                onClick={() => setReceiveData(null)} 
+                className="px-4 py-2.5 text-gray-600 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50"
+              >
                 Batal
               </button>
-              <button onClick={handleSaveReceive} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+              <button 
+                onClick={handleSaveReceive} 
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
+              >
                 Simpan & Tambah Stok
               </button>
             </div>
