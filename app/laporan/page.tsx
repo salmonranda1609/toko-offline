@@ -66,7 +66,7 @@ export default function LaporanPage() {
   }, [selectedDate]) // Akan berjalan ulang setiap kali tanggal diubah
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 pb-24 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Laporan</h1>
         
