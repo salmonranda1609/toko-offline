@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import 'dexie-export-import'
 
 export interface Product {
   id: string
@@ -62,4 +63,27 @@ export async function exportData() {
   a.href = url
   a.download = `backup-toko-${new Date().toISOString().split('T')[0]}.json`
   a.click()
+}
+
+
+// --- FUNGSI RESTORE (IMPORT) ---
+export async function importData(file: File) {
+  if (typeof window === 'undefined') return false
+  
+  try {
+    // Konfirmasi sebelum menimpa data
+    if (!confirm('PERINGATAN: Data saat ini akan DIGANTI dengan data dari file backup. Lanjutkan?')) {
+      return false
+    }
+
+    // Menggunakan fitur import dari dexie-export-import
+    await db.import(file, { clearTablesBeforeImport: true })
+    
+    alert('Data berhasil dipulihkan!')
+    return true
+  } catch (error) {
+    console.error("Gagal restore:", error)
+    alert("Gagal memulihkan data. Pastikan file yang dipilih valid.")
+    return false
+  }
 }
