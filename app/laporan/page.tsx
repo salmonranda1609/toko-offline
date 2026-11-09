@@ -7,9 +7,13 @@ export default function LaporanPage() {
   const [lowStock, setLowStock] = useState<Product[]>([])
   
 <<<<<<< HEAD
+<<<<<<< HEAD
   // State untuk Filter Tanggal
 =======
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+  // State Filter Tanggal (Default: Hari Ini format YYYY-MM-DD)
+>>>>>>> ffeabc0 (Commit pertama)
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date()
     const offset = today.getTimezoneOffset() * 60000
@@ -17,13 +21,18 @@ export default function LaporanPage() {
   })
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // State Ringkasan
 =======
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+  // State Ringkasan
+>>>>>>> ffeabc0 (Commit pertama)
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [trxCount, setTrxCount] = useState(0)
   const [paymentSummary, setPaymentSummary] = useState<Record<string, number>>({})
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   // State untuk Modal Detail Transaksi
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
@@ -66,15 +75,29 @@ export default function LaporanPage() {
     fetchData()
   }, [selectedDate])
 =======
+=======
+  // State Modal Detail
+>>>>>>> ffeabc0 (Commit pertama)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
 
   async function fetchData() {
     try {
+<<<<<<< HEAD
       const prods = await db.products.toArray()
       setLowStock(prods.filter(p => p.stock_qty <= 5))
 
       const allSales = await db.sales.toArray()
       
+=======
+      // 1. Ambil produk stok menipis
+      const prods = await db.products.toArray()
+      setLowStock(prods.filter(p => p.stock_qty <= 5))
+
+      // 2. Ambil semua transaksi
+      const allSales = await db.sales.toArray()
+      
+      // 3. Filter transaksi berdasarkan tanggal lokal
+>>>>>>> ffeabc0 (Commit pertama)
       const filteredSales = allSales.filter(s => {
         const dateObj = new Date(s.created_at)
         const offset = dateObj.getTimezoneOffset() * 60000
@@ -82,11 +105,19 @@ export default function LaporanPage() {
         return localISOTime === selectedDate
       })
       
+<<<<<<< HEAD
+=======
+      // Urutkan dari yang terbaru
+>>>>>>> ffeabc0 (Commit pertama)
       filteredSales.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
       setSales(filteredSales)
       setTrxCount(filteredSales.length)
       
+<<<<<<< HEAD
+=======
+      // 4. Hitung Total Pendapatan & Rekap Metode
+>>>>>>> ffeabc0 (Commit pertama)
       let total = 0
       const summary: Record<string, number> = {}
       filteredSales.forEach(s => {
@@ -97,13 +128,25 @@ export default function LaporanPage() {
 
       setTotalRevenue(total)
       setPaymentSummary(summary)
+<<<<<<< HEAD
+=======
+
+>>>>>>> ffeabc0 (Commit pertama)
     } catch (error) {
       console.error("Gagal memuat laporan:", error)
     }
   }
 
+<<<<<<< HEAD
   useEffect(() => { fetchData() }, [selectedDate])
 
+=======
+  useEffect(() => {
+    fetchData()
+  }, [selectedDate])
+
+  // Fungsi Hapus Semua Transaksi
+>>>>>>> ffeabc0 (Commit pertama)
   async function handleClearTransactions() {
     if (!confirm('PERINGATAN: Apakah Anda yakin ingin menghapus SEMUA riwayat penjualan dan pembelian? Tindakan ini tidak bisa dibatalkan.')) return
     await db.sales.clear()
@@ -111,6 +154,7 @@ export default function LaporanPage() {
     alert('Semua riwayat transaksi berhasil dihapus.')
     fetchData()
   }
+<<<<<<< HEAD
 >>>>>>> 44a9bed (pesan penjelasan update)
 
   return (
@@ -118,6 +162,15 @@ export default function LaporanPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Laporan</h1>
 <<<<<<< HEAD
+=======
+
+  return (
+    <div className="p-4 pb-24 space-y-4 relative">
+      
+      {/* HEADER & FILTER TANGGAL */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-xl font-bold">Laporan</h1>
+>>>>>>> ffeabc0 (Commit pertama)
         <input 
           type="date" 
           value={selectedDate} 
@@ -126,6 +179,7 @@ export default function LaporanPage() {
         />
       </div>
 
+<<<<<<< HEAD
       {/* Ringkasan Penjualan */}
 =======
         <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border p-2 rounded text-sm bg-white" />
@@ -163,6 +217,54 @@ export default function LaporanPage() {
       {/* Tabel Rincian Transaksi */}
 =======
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+      {/* CARD RINGKASAN (TABEL) */}
+      <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b text-left text-gray-700">
+              <th className="p-3 font-semibold">Metode</th>
+              <th className="p-3 font-semibold text-center">Qty</th>
+              <th className="p-3 font-semibold text-right">Total (Rp)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {['qris', 'cash', 'transfer'].map(method => {
+              const amount = paymentSummary[method] || 0
+              if (amount === 0) return null // Sembunyikan jika 0
+              
+              const count = sales.filter(s => s.method === method).length
+
+              return (
+                <tr key={method} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="p-3 uppercase font-medium text-gray-700">- {method}</td>
+                  <td className="p-3 text-center">{count}</td>
+                  <td className="p-3 text-right font-medium">{amount.toLocaleString('id-ID')}</td>
+                </tr>
+              )
+            })}
+            
+            {Object.keys(paymentSummary).length === 0 && (
+              <tr>
+                <td colSpan={3} className="p-4 text-center text-gray-500 italic">Belum ada transaksi pada tanggal ini.</td>
+              </tr>
+            )}
+          </tbody>
+          {/* Baris Total Keseluruhan */}
+          <tfoot className="bg-gray-50 border-t-2 border-gray-800">
+            <tr>
+              <td className="p-3 font-bold text-base">Total</td>
+              <td className="p-3 text-center font-bold text-base">{trxCount}</td>
+              <td className="p-3 text-right font-bold text-base text-blue-600">
+                {totalRevenue.toLocaleString('id-ID')}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* TABEL RINCIAN TRANSAKSI */}
+>>>>>>> ffeabc0 (Commit pertama)
       <h2 className="font-semibold text-lg pt-2">Rincian Transaksi</h2>
       <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat detail barang</p>
       
@@ -179,6 +281,9 @@ export default function LaporanPage() {
           <tbody>
             {sales.map((s) => (
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ffeabc0 (Commit pertama)
               <tr 
                 key={s.id} 
                 onClick={() => setSelectedSale(s)}
@@ -199,6 +304,7 @@ export default function LaporanPage() {
             {sales.length === 0 && (
               <tr><td colSpan={4} className="p-4 text-center text-gray-500">Tidak ada transaksi pada tanggal ini.</td></tr>
             )}
+<<<<<<< HEAD
 =======
               <tr key={s.id} onClick={() => setSelectedSale(s)} className="border-t hover:bg-blue-50 cursor-pointer transition-colors">
                 <td className="p-3">{new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
@@ -209,14 +315,20 @@ export default function LaporanPage() {
             ))}
             {sales.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-500">Tidak ada transaksi pada tanggal ini.</td></tr>}
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+>>>>>>> ffeabc0 (Commit pertama)
           </tbody>
         </table>
       </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Stok Menipis */}
 =======
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+      {/* STOK MENIPIS */}
+>>>>>>> ffeabc0 (Commit pertama)
       <h2 className="font-semibold text-lg pt-2">Produk Stok Menipis</h2>
       <div className="bg-white border rounded overflow-hidden">
         <table className="w-full text-sm">
@@ -234,18 +346,28 @@ export default function LaporanPage() {
               </tr>
             ))}
 <<<<<<< HEAD
+<<<<<<< HEAD
             {lowStock.length === 0 && (
               <tr><td colSpan={2} className="p-4 text-center text-green-600 font-medium">Semua stok aman.</td></tr>
             )}
 =======
             {lowStock.length === 0 && <tr><td colSpan={2} className="p-4 text-center text-green-600 font-medium">Semua stok aman.</td></tr>}
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+            {lowStock.length === 0 && (
+              <tr><td colSpan={2} className="p-4 text-center text-green-600 font-medium">Semua stok aman.</td></tr>
+            )}
+>>>>>>> ffeabc0 (Commit pertama)
           </tbody>
         </table>
       </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Tombol Backup */}
+=======
+      {/* AREA BACKUP & HAPUS */}
+>>>>>>> ffeabc0 (Commit pertama)
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mt-6">
         <h2 className="font-bold text-yellow-800 mb-2">Amankan Data Anda</h2>
         <p className="text-sm text-yellow-700 mb-3">Lakukan backup rutin agar data tidak hilang jika HP rusak atau cache terhapus.</p>
@@ -254,6 +376,7 @@ export default function LaporanPage() {
         </button>
       </div>
 
+<<<<<<< HEAD
       {/* MODAL DETAIL TRANSAKSI */}
 =======
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mt-6">
@@ -269,21 +392,38 @@ export default function LaporanPage() {
       </div>
 
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+      <div className="bg-red-50 border border-red-200 p-4 rounded mt-4">
+        <h2 className="font-bold text-red-800 mb-2">Zona Berbahaya</h2>
+        <p className="text-sm text-red-700 mb-3">Menghapus semua riwayat penjualan dan pembelian. Data produk dan pemasok tidak akan terhapus.</p>
+        <button onClick={handleClearTransactions} className="bg-red-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-red-700">
+          Hapus Semua Transaksi
+        </button>
+      </div>
+
+      {/* MODAL DETAIL TRANSAKSI */}
+>>>>>>> ffeabc0 (Commit pertama)
       {selectedSale && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
             <div className="border-b pb-3">
               <h2 className="font-bold text-lg text-gray-900">Detail Transaksi</h2>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ffeabc0 (Commit pertama)
               <p className="text-xs text-gray-500 mt-1">
                 {new Date(selectedSale.created_at).toLocaleString('id-ID')} • <span className="uppercase font-bold text-blue-600">{selectedSale.method}</span>
               </p>
             </div>
             
+<<<<<<< HEAD
 =======
               <p className="text-xs text-gray-500 mt-1">{new Date(selectedSale.created_at).toLocaleString('id-ID')} • <span className="uppercase font-bold text-blue-600">{selectedSale.method}</span></p>
             </div>
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+>>>>>>> ffeabc0 (Commit pertama)
             <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
               {selectedSale.items && selectedSale.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
@@ -296,14 +436,21 @@ export default function LaporanPage() {
               ))}
             </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+
+>>>>>>> ffeabc0 (Commit pertama)
             <div className="flex justify-between items-center pt-3 border-t mt-2">
               <span className="font-bold text-gray-600">Total</span>
               <span className="font-bold text-lg text-blue-600">Rp {selectedSale.total.toLocaleString()}</span>
             </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ffeabc0 (Commit pertama)
 
             <button 
               onClick={() => setSelectedSale(null)} 
@@ -311,16 +458,23 @@ export default function LaporanPage() {
             >
               Tutup
             </button>
+<<<<<<< HEAD
 =======
             <button onClick={() => setSelectedSale(null)} className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200">Tutup</button>
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+>>>>>>> ffeabc0 (Commit pertama)
           </div>
         </div>
       )}
     </div>
   )
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
 =======
 }
 >>>>>>> 44a9bed (pesan penjelasan update)
+=======
+}
+>>>>>>> ffeabc0 (Commit pertama)
