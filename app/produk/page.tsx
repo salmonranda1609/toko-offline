@@ -6,12 +6,9 @@ export default function ProdukPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', price: '', cost: '', stock_qty: '' })
-<<<<<<< HEAD
-=======
   
   // State Edit Produk
   const [editProduct, setEditProduct] = useState<Product | null>(null)
->>>>>>> ffeabc0 (Commit pertama)
 
   async function load() { setProducts(await db.products.toArray()) }
   useEffect(() => { load() }, [])
@@ -20,29 +17,14 @@ export default function ProdukPage() {
     e.preventDefault()
     await db.products.add({
       id: crypto.randomUUID(),
-<<<<<<< HEAD
-      name: form.name,
-      price: Number(form.price),
-      cost: Number(form.cost || 0),
-      stock_qty: Number(form.stock_qty || 0)
-=======
       name: form.name, price: Number(form.price),
       cost: Number(form.cost || 0), stock_qty: Number(form.stock_qty || 0)
->>>>>>> ffeabc0 (Commit pertama)
     })
     setForm({ name: '', price: '', cost: '', stock_qty: '' })
     setShowForm(false)
     load()
   }
 
-<<<<<<< HEAD
-  async function deleteItem(id: string) {
-    if (!confirm('Hapus produk ini?')) return
-    await db.products.delete(id)
-    load()
-  }
-
-=======
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault()
     if (!editProduct) return
@@ -63,17 +45,12 @@ export default function ProdukPage() {
     }
   }
 
->>>>>>> ffeabc0 (Commit pertama)
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Produk</h1>
         <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded text-sm">
-<<<<<<< HEAD
-          {showForm ? 'Tutup' : '+ Tambah Produk'}
-=======
           {showForm ? 'Tutup' : '+ Tambah'}
->>>>>>> ffeabc0 (Commit pertama)
         </button>
       </div>
       
@@ -82,32 +59,6 @@ export default function ProdukPage() {
           <input className="border p-2 rounded" placeholder="Nama" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
           <input className="border p-2 rounded" type="number" placeholder="Harga Jual" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required />
           <input className="border p-2 rounded" type="number" placeholder="Stok Awal" value={form.stock_qty} onChange={e => setForm({ ...form, stock_qty: e.target.value })} />
-<<<<<<< HEAD
-<<<<<<< HEAD
-          <button className="bg-green-600 text-white p-2 rounded">Simpan</button>
-=======
-          <button className="bg-green-600 text-white p-2 rounded font-semibold">Simpan</button>
->>>>>>> 44a9bed (pesan penjelasan update)
-        </form>
-      )}
-
-      <table className="w-full bg-white border text-sm">
-        <thead><tr className="bg-gray-100 text-left"><th className="p-2">Nama</th><th className="p-2 text-right">Harga</th><th className="p-2 text-right">Stok</th><th className="p-2"></th></tr></thead>
-        <tbody>
-          {products.map(p => (
-            <tr key={p.id} className="border-t">
-              <td className="p-2">{p.name}</td>
-              <td className="p-2 text-right">Rp {p.price.toLocaleString()}</td>
-              <td className="p-2 text-right">{p.stock_qty}</td>
-              <td className="p-2 text-right"><button onClick={() => deleteItem(p.id)} className="text-red-500 text-xs">hapus</button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-=======
           <button className="bg-green-600 text-white p-2 rounded font-semibold">Simpan</button>
         </form>
       )}
@@ -156,4 +107,3 @@ export default function ProdukPage() {
     </div>
   )
 }
->>>>>>> ffeabc0 (Commit pertama)

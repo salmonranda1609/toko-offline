@@ -1,25 +1,16 @@
 'use client'
-<<<<<<< HEAD
-import { useEffect, useState } from 'react'
-import { db, Product } from '@/lib/db'
-=======
 import { useEffect, useState, useRef } from 'react'
 import { db, Product, Sale } from '@/lib/db'
 import html2canvas from 'html2canvas'
->>>>>>> ffeabc0 (Commit pertama)
 
 export default function KasirPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [cart, setCart] = useState<{ product: Product, qty: number }[]>([])
   const [search, setSearch] = useState('')
-<<<<<<< HEAD
-  const [msg, setMsg] = useState('')
-=======
   
   // State untuk struk
   const [receipt, setReceipt] = useState<Sale | null>(null)
   const receiptRef = useRef<HTMLDivElement>(null)
->>>>>>> ffeabc0 (Commit pertama)
 
   async function load() { setProducts(await db.products.toArray()) }
   useEffect(() => { load() }, [])
@@ -32,8 +23,6 @@ export default function KasirPage() {
     })
   }
 
-<<<<<<< HEAD
-=======
   function updateQty(id: string, delta: number) {
     setCart(prev => prev.map(c => {
       if (c.product.id === id) {
@@ -48,33 +37,11 @@ export default function KasirPage() {
     setCart(prev => prev.filter(c => c.product.id !== id))
   }
 
->>>>>>> ffeabc0 (Commit pertama)
   const total = cart.reduce((s, c) => s + c.product.price * c.qty, 0)
 
   async function checkout(method: string) {
     if (!cart.length) return
     
-<<<<<<< HEAD
-<<<<<<< HEAD
-    // Gunakan Dexie Transaction agar aman
-    await db.transaction('rw', db.products, db.sales, async () => {
-      // 1. Simpan transaksi
-=======
-    await db.transaction('rw', db.products, db.sales, async () => {
->>>>>>> 44a9bed (pesan penjelasan update)
-      await db.sales.add({
-        id: crypto.randomUUID(),
-        total,
-        method,
-        created_at: new Date().toISOString(),
-        items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
-      })
-      
-<<<<<<< HEAD
-      // 2. Kurangi stok
-=======
->>>>>>> 44a9bed (pesan penjelasan update)
-=======
     const newSale: Sale = {
       id: crypto.randomUUID(),
       total,
@@ -85,7 +52,6 @@ export default function KasirPage() {
 
     await db.transaction('rw', db.products, db.sales, async () => {
       await db.sales.add(newSale)
->>>>>>> ffeabc0 (Commit pertama)
       for (const item of cart) {
         const prod = await db.products.get(item.product.id)
         if (prod) {
@@ -94,12 +60,6 @@ export default function KasirPage() {
       }
     })
 
-<<<<<<< HEAD
-    setMsg('Transaksi Berhasil!')
-    setCart([])
-    load()
-    setTimeout(() => setMsg(''), 3000)
-=======
     setReceipt(newSale) // Tampilkan modal struk
     setCart([])
     load()
@@ -127,7 +87,6 @@ export default function KasirPage() {
     
     const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
     window.open(waUrl, '_blank')
->>>>>>> ffeabc0 (Commit pertama)
   }
 
   return (
@@ -144,18 +103,6 @@ export default function KasirPage() {
           ))}
         </div>
       </div>
-<<<<<<< HEAD
-      <div className="border p-4 rounded bg-white h-fit">
-        <h2 className="font-bold mb-2">Keranjang</h2>
-        {cart.map(c => (
-          <div key={c.product.id} className="flex justify-between py-1 border-b text-sm">
-            <span>{c.product.name} x{c.qty}</span>
-            <span>Rp {(c.product.price * c.qty).toLocaleString()}</span>
-          </div>
-        ))}
-        <div className="font-bold mt-4 text-lg">Total: Rp {total.toLocaleString()}</div>
-        {msg && <p className="text-green-600 text-sm font-bold mt-2">{msg}</p>}
-=======
       
       <div className="border p-4 rounded bg-white h-fit">
         <h2 className="font-bold mb-2">Keranjang</h2>
@@ -177,7 +124,6 @@ export default function KasirPage() {
         ))}
         
         <div className="font-bold mt-4 text-lg">Total: Rp {total.toLocaleString()}</div>
->>>>>>> ffeabc0 (Commit pertama)
         <div className="grid grid-cols-3 gap-2 mt-4">
           {['cash', 'qris', 'transfer'].map(m => (
             <button key={m} onClick={() => checkout(m)} disabled={!cart.length} className="bg-blue-600 text-white p-2 rounded disabled:opacity-50 uppercase text-xs">
@@ -186,11 +132,6 @@ export default function KasirPage() {
           ))}
         </div>
       </div>
-<<<<<<< HEAD
-    </div>
-  )
-}
-=======
 
       {/* MODAL STRUK */}
       {receipt && (
@@ -227,4 +168,3 @@ export default function KasirPage() {
     </div>
   )
 }
->>>>>>> ffeabc0 (Commit pertama)

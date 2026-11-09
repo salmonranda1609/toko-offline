@@ -1,6 +1,0 @@
-# POS
-# POS
-# POS
-# POS
-# POS
-# POS
