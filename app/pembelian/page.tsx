@@ -7,18 +7,26 @@ export default function PembelianPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [purchases, setPurchases] = useState<Purchase[]>([])
   
+<<<<<<< HEAD
   // State Form Pesanan
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
   const [supplierId, setSupplierId] = useState('')
   const [productPick, setProductPick] = useState('')
   const [qty, setQty] = useState('1')
   const [draft, setDraft] = useState<{ product: Product, qty: number }[]>([])
   const [msg, setMsg] = useState('')
 
+<<<<<<< HEAD
   // State Modal Terima Barang
   const [receiveData, setReceiveData] = useState<Purchase | null>(null)
   const [costInputs, setCostInputs] = useState<Record<string, string>>({})
 
   // State Modal Detail Riwayat Pembelian
+=======
+  const [receiveData, setReceiveData] = useState<Purchase | null>(null)
+  const [costInputs, setCostInputs] = useState<Record<string, string>>({})
+>>>>>>> 44a9bed (pesan penjelasan update)
   const [detailPurchase, setDetailPurchase] = useState<Purchase | null>(null)
 
   async function load() {
@@ -27,21 +35,31 @@ export default function PembelianPage() {
     const allPurchases = await db.purchases.toArray()
     setPurchases(allPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
   }
+<<<<<<< HEAD
   
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
   useEffect(() => { load() }, [])
 
   function addItem() {
     const prod = products.find(x => x.id === productPick)
     if (!prod || Number(qty) <= 0) return
+<<<<<<< HEAD
     
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
     setDraft(prev => {
       const found = prev.find(d => d.product.id === prod.id)
       if (found) return prev.map(d => d.product.id === prod.id ? { ...d, qty: d.qty + Number(qty) } : d)
       return [...prev, { product: prod, qty: Number(qty) }]
     })
+<<<<<<< HEAD
     
     setProductPick(''); 
     setQty('1')
+=======
+    setProductPick(''); setQty('1')
+>>>>>>> 44a9bed (pesan penjelasan update)
   }
 
   async function submitOrder() {
@@ -64,9 +82,13 @@ export default function PembelianPage() {
       window.open(`https://wa.me/${wa}?text=${encodeURIComponent(text)}`, '_blank')
     }
 
+<<<<<<< HEAD
     setDraft([]); 
     setSupplierId(''); 
     setMsg('Pesanan dibuat & WhatsApp dibuka!')
+=======
+    setDraft([]); setSupplierId(''); setMsg('Pesanan dibuat & WhatsApp dibuka!')
+>>>>>>> 44a9bed (pesan penjelasan update)
     load()
   }
 
@@ -120,26 +142,39 @@ export default function PembelianPage() {
     load()
   }
 
+<<<<<<< HEAD
   // --- LOGIKA GROUPING PER PEMASOK ---
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
   const groupedPurchases = suppliers.map(sup => {
     return {
       supplier: sup,
       history: purchases.filter(p => p.supplier_id === sup.id)
     }
+<<<<<<< HEAD
   }).filter(group => group.history.length > 0) // Hanya tampilkan pemasok yang punya riwayat
+=======
+  }).filter(group => group.history.length > 0)
+>>>>>>> 44a9bed (pesan penjelasan update)
 
   return (
     <div className="p-4 pb-24 space-y-4 relative">
       <h1 className="text-xl font-bold">Pembelian</h1>
       
+<<<<<<< HEAD
       {/* FORM BUAT PESANAN */}
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
       <div className="bg-white p-3 border rounded-lg shadow-sm space-y-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <select className="border p-2 rounded bg-gray-50" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
             <option value="">-- Pilih Pemasok --</option>
             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
+<<<<<<< HEAD
           
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
           <div className="flex gap-2">
             <select className="border p-2 rounded bg-gray-50 flex-1" value={productPick} onChange={e => setProductPick(e.target.value)}>
               <option value="">-- Pilih Produk --</option>
@@ -162,6 +197,7 @@ export default function PembelianPage() {
         {msg && <p className="text-blue-600 text-sm">{msg}</p>}
       </div>
 
+<<<<<<< HEAD
       {/* RIWAYAT PEMBELIAN (DI-GROUPING) */}
       <div className="space-y-6 pt-2">
         <h2 className="font-semibold text-lg">Riwayat Pembelian (Per Pemasok)</h2>
@@ -169,13 +205,23 @@ export default function PembelianPage() {
         {groupedPurchases.length === 0 && (
           <p className="text-sm text-gray-500">Belum ada riwayat pembelian.</p>
         )}
+=======
+      <div className="space-y-6 pt-2">
+        <h2 className="font-semibold text-lg">Riwayat Pembelian (Per Pemasok)</h2>
+        <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat rincian barang</p>
+        
+        {groupedPurchases.length === 0 && <p className="text-sm text-gray-500">Belum ada riwayat pembelian.</p>}
+>>>>>>> 44a9bed (pesan penjelasan update)
 
         {groupedPurchases.map(({ supplier, history }) => (
           <div key={supplier.id} className="space-y-2">
             <h3 className="font-bold text-blue-800 bg-blue-50 inline-block px-3 py-1 rounded-lg border border-blue-100">
               🏭 {supplier.name}
             </h3>
+<<<<<<< HEAD
             
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
             <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
               <table className="w-full text-sm">
                 <thead>
@@ -188,6 +234,7 @@ export default function PembelianPage() {
                 </thead>
                 <tbody>
                   {history.map(p => (
+<<<<<<< HEAD
                     <tr 
                       key={p.id} 
                       onClick={() => setDetailPurchase(p)}
@@ -203,15 +250,26 @@ export default function PembelianPage() {
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
                           p.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                         }`}>
+=======
+                    <tr key={p.id} onClick={() => setDetailPurchase(p)} className="border-b last:border-0 hover:bg-blue-50 cursor-pointer transition-colors">
+                      <td className="p-3 whitespace-nowrap">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
+                      <td className="p-3 text-right">{p.total > 0 ? `Rp ${p.total.toLocaleString()}` : '-'}</td>
+                      <td className="p-3 text-center">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${p.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+>>>>>>> 44a9bed (pesan penjelasan update)
                           {p.status}
                         </span>
                       </td>
                       <td className="p-3 text-center">
                         {p.status === 'sent' && (
+<<<<<<< HEAD
                           <button 
                             onClick={(e) => openReceiveModal(p, e)} 
                             className="text-green-600 font-bold text-xs hover:underline px-2 py-1 bg-green-50 rounded"
                           >
+=======
+                          <button onClick={(e) => openReceiveModal(p, e)} className="text-green-600 font-bold text-xs hover:underline px-2 py-1 bg-green-50 rounded">
+>>>>>>> 44a9bed (pesan penjelasan update)
                             terima
                           </button>
                         )}
@@ -233,7 +291,10 @@ export default function PembelianPage() {
               <h2 className="font-bold text-lg text-gray-900">Penerimaan Barang</h2>
               <p className="text-sm text-gray-500 mt-1">Masukkan harga beli (modal) sesuai nota dari supplier.</p>
             </div>
+<<<<<<< HEAD
             
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
             <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
               {receiveData.items.map((item) => (
                 <div key={item.product_id} className="flex flex-col gap-1.5">
@@ -242,6 +303,7 @@ export default function PembelianPage() {
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-600">Rp</span>
+<<<<<<< HEAD
                     <input 
                       type="number" 
                       className="border border-gray-300 p-2.5 rounded-lg flex-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
@@ -249,10 +311,14 @@ export default function PembelianPage() {
                       value={costInputs[item.product_id] || ''}
                       onChange={(e) => setCostInputs({ ...costInputs, [item.product_id]: e.target.value })}
                     />
+=======
+                    <input type="number" className="border border-gray-300 p-2.5 rounded-lg flex-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Harga per pcs" value={costInputs[item.product_id] || ''} onChange={(e) => setCostInputs({ ...costInputs, [item.product_id]: e.target.value })} />
+>>>>>>> 44a9bed (pesan penjelasan update)
                   </div>
                 </div>
               ))}
             </div>
+<<<<<<< HEAD
 
             <div className="flex gap-2 justify-end pt-2 border-t mt-4">
               <button 
@@ -267,6 +333,11 @@ export default function PembelianPage() {
               >
                 Simpan & Tambah Stok
               </button>
+=======
+            <div className="flex gap-2 justify-end pt-2 border-t mt-4">
+              <button onClick={() => setReceiveData(null)} className="px-4 py-2.5 text-gray-600 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50">Batal</button>
+              <button onClick={handleSaveReceive} className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">Simpan & Tambah Stok</button>
+>>>>>>> 44a9bed (pesan penjelasan update)
             </div>
           </div>
         </div>
@@ -279,6 +350,7 @@ export default function PembelianPage() {
             <div className="border-b pb-3">
               <h2 className="font-bold text-lg text-gray-900">Detail Pembelian</h2>
               <p className="text-xs text-gray-500 mt-1">
+<<<<<<< HEAD
                 {new Date(detailPurchase.created_at).toLocaleString('id-ID')} • 
                 <span className={`ml-1 uppercase font-bold ${detailPurchase.status === 'received' ? 'text-green-600' : 'text-yellow-600'}`}>
                   {detailPurchase.status}
@@ -286,6 +358,11 @@ export default function PembelianPage() {
               </p>
             </div>
             
+=======
+                {new Date(detailPurchase.created_at).toLocaleString('id-ID')} • <span className={`ml-1 uppercase font-bold ${detailPurchase.status === 'received' ? 'text-green-600' : 'text-yellow-600'}`}>{detailPurchase.status}</span>
+              </p>
+            </div>
+>>>>>>> 44a9bed (pesan penjelasan update)
             <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
               {detailPurchase.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-start text-sm border-b pb-2 last:border-0">
@@ -306,6 +383,7 @@ export default function PembelianPage() {
                 </div>
               ))}
             </div>
+<<<<<<< HEAD
 
             <div className="flex justify-between items-center pt-3 border-t mt-2">
               <span className="font-bold text-gray-600">Total Modal</span>
@@ -320,9 +398,20 @@ export default function PembelianPage() {
             >
               Tutup
             </button>
+=======
+            <div className="flex justify-between items-center pt-3 border-t mt-2">
+              <span className="font-bold text-gray-600">Total Modal</span>
+              <span className="font-bold text-lg text-blue-600">{detailPurchase.total > 0 ? `Rp ${detailPurchase.total.toLocaleString()}` : '-'}</span>
+            </div>
+            <button onClick={() => setDetailPurchase(null)} className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200">Tutup</button>
+>>>>>>> 44a9bed (pesan penjelasan update)
           </div>
         </div>
       )}
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 44a9bed (pesan penjelasan update)

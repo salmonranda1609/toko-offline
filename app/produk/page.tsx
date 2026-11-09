@@ -44,7 +44,11 @@ export default function ProdukPage() {
           <input className="border p-2 rounded" placeholder="Nama" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
           <input className="border p-2 rounded" type="number" placeholder="Harga Jual" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required />
           <input className="border p-2 rounded" type="number" placeholder="Stok Awal" value={form.stock_qty} onChange={e => setForm({ ...form, stock_qty: e.target.value })} />
+<<<<<<< HEAD
           <button className="bg-green-600 text-white p-2 rounded">Simpan</button>
+=======
+          <button className="bg-green-600 text-white p-2 rounded font-semibold">Simpan</button>
+>>>>>>> 44a9bed (pesan penjelasan update)
         </form>
       )}
 

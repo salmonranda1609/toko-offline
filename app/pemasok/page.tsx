@@ -22,7 +22,11 @@ export default function PemasokPage() {
       <form onSubmit={handleSave} className="bg-white p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2">
         <input className="border p-2 rounded" placeholder="Nama Pemasok" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
         <input className="border p-2 rounded" placeholder="No WA (0812...)" value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
+<<<<<<< HEAD
         <button className="bg-blue-600 text-white p-2 rounded">Tambah</button>
+=======
+        <button className="bg-blue-600 text-white p-2 rounded font-semibold">Tambah</button>
+>>>>>>> 44a9bed (pesan penjelasan update)
       </form>
 
       <table className="w-full bg-white border text-sm">

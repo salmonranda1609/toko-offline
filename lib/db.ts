@@ -31,7 +31,10 @@ export interface Purchase {
   items: any[]
 }
 
+<<<<<<< HEAD
 // Inisialisasi Database Dexie
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
 const db = new Dexie('TokoKelontongDB') as Dexie & {
   products: EntityTable<Product, 'id'>
   suppliers: EntityTable<Supplier, 'id'>
@@ -40,7 +43,11 @@ const db = new Dexie('TokoKelontongDB') as Dexie & {
 }
 
 db.version(1).stores({
+<<<<<<< HEAD
   products: 'id, name', // id adalah primary key
+=======
+  products: 'id, name',
+>>>>>>> 44a9bed (pesan penjelasan update)
   suppliers: 'id, name',
   sales: 'id, created_at',
   purchases: 'id, created_at, status'

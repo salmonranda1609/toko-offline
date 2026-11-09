@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "toko-dexie",
+=======
+  "name": "toko-offline-final",
+>>>>>>> 44a9bed (pesan penjelasan update)
   "version": "0.1.0",
   "private": true,
   "scripts": {

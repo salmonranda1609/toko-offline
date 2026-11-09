@@ -24,9 +24,13 @@ export default function KasirPage() {
   async function checkout(method: string) {
     if (!cart.length) return
     
+<<<<<<< HEAD
     // Gunakan Dexie Transaction agar aman
     await db.transaction('rw', db.products, db.sales, async () => {
       // 1. Simpan transaksi
+=======
+    await db.transaction('rw', db.products, db.sales, async () => {
+>>>>>>> 44a9bed (pesan penjelasan update)
       await db.sales.add({
         id: crypto.randomUUID(),
         total,
@@ -35,7 +39,10 @@ export default function KasirPage() {
         items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
       })
       
+<<<<<<< HEAD
       // 2. Kurangi stok
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
       for (const item of cart) {
         const prod = await db.products.get(item.product.id)
         if (prod) {

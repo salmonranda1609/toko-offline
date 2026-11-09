@@ -5,7 +5,11 @@ import { dirname, join } from 'node:path'
 const files = {}
 
 files['package.json'] = JSON.stringify({
+<<<<<<< HEAD
   name: 'toko-dexie',
+=======
+  name: 'toko-offline-final',
+>>>>>>> 44a9bed (pesan penjelasan update)
   version: '0.1.0',
   private: true,
   scripts: {
@@ -127,7 +131,10 @@ export interface Purchase {
   items: any[]
 }
 
+<<<<<<< HEAD
 // Inisialisasi Database Dexie
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
 const db = new Dexie('TokoKelontongDB') as Dexie & {
   products: EntityTable<Product, 'id'>
   suppliers: EntityTable<Supplier, 'id'>
@@ -136,7 +143,11 @@ const db = new Dexie('TokoKelontongDB') as Dexie & {
 }
 
 db.version(1).stores({
+<<<<<<< HEAD
   products: 'id, name', // id adalah primary key
+=======
+  products: 'id, name',
+>>>>>>> 44a9bed (pesan penjelasan update)
   suppliers: 'id, name',
   sales: 'id, created_at',
   purchases: 'id, created_at, status'
@@ -165,7 +176,11 @@ export async function exportData() {
 // ==========================================
 // KOMPONEN & LAYOUT
 // ==========================================
+<<<<<<< HEAD
 files['app/globals.css'] = `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nhtml, body { height: 100%; }\nbody { @apply bg-gray-50 text-gray-900; }`
+=======
+files['app/globals.css'] = `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nhtml, body { height: 100%; }\nbody { @apply bg-gray-50 text-gray-900; }\n\n@supports (padding-bottom: env(safe-area-inset-bottom)) {\n  .pb-safe {\n    padding-bottom: env(safe-area-inset-bottom);\n  }\n}`
+>>>>>>> 44a9bed (pesan penjelasan update)
 
 files['app/layout.tsx'] = `import type { Metadata, Viewport } from 'next'
 import './globals.css'
@@ -177,7 +192,11 @@ export const viewport: Viewport = { themeColor: '#2563eb', width: 'device-width'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
+<<<<<<< HEAD
       <body className="pb-16">
+=======
+      <body className="bg-gray-50 pb-20">
+>>>>>>> 44a9bed (pesan penjelasan update)
         {children}
         <Nav />
       </body>
@@ -203,7 +222,11 @@ const links = [
 export function Nav() {
   const pathname = usePathname()
   return (
+<<<<<<< HEAD
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t flex justify-around items-center h-16">
+=======
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex justify-around items-center h-16 pb-safe">
+>>>>>>> 44a9bed (pesan penjelasan update)
       {links.map((l) => {
         const isActive = pathname === l.href
         return (
@@ -247,9 +270,13 @@ export default function KasirPage() {
   async function checkout(method: string) {
     if (!cart.length) return
     
+<<<<<<< HEAD
     // Gunakan Dexie Transaction agar aman
     await db.transaction('rw', db.products, db.sales, async () => {
       // 1. Simpan transaksi
+=======
+    await db.transaction('rw', db.products, db.sales, async () => {
+>>>>>>> 44a9bed (pesan penjelasan update)
       await db.sales.add({
         id: crypto.randomUUID(),
         total,
@@ -258,7 +285,10 @@ export default function KasirPage() {
         items: cart.map(c => ({ product_id: c.product.id, name: c.product.name, qty: c.qty, price: c.product.price }))
       })
       
+<<<<<<< HEAD
       // 2. Kurangi stok
+=======
+>>>>>>> 44a9bed (pesan penjelasan update)
       for (const item of cart) {
         const prod = await db.products.get(item.product.id)
         if (prod) {
@@ -359,7 +389,11 @@ export default function ProdukPage() {
           <input className="border p-2 rounded" placeholder="Nama" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
           <input className="border p-2 rounded" type="number" placeholder="Harga Jual" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required />
           <input className="border p-2 rounded" type="number" placeholder="Stok Awal" value={form.stock_qty} onChange={e => setForm({ ...form, stock_qty: e.target.value })} />
+<<<<<<< HEAD
           <button className="bg-green-600 text-white p-2 rounded">Simpan</button>
+=======
+          <button className="bg-green-600 text-white p-2 rounded font-semibold">Simpan</button>
+>>>>>>> 44a9bed (pesan penjelasan update)
         </form>
       )}
 
@@ -408,7 +442,11 @@ export default function PemasokPage() {
       <form onSubmit={handleSave} className="bg-white p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2">
         <input className="border p-2 rounded" placeholder="Nama Pemasok" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
         <input className="border p-2 rounded" placeholder="No WA (0812...)" value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
+<<<<<<< HEAD
         <button className="bg-blue-600 text-white p-2 rounded">Tambah</button>
+=======
+        <button className="bg-blue-600 text-white p-2 rounded font-semibold">Tambah</button>
+>>>>>>> 44a9bed (pesan penjelasan update)
       </form>
 
       <table className="w-full bg-white border text-sm">
@@ -429,7 +467,11 @@ export default function PemasokPage() {
 `
 
 // ==========================================
+<<<<<<< HEAD
 // HALAMAN PEMBELIAN
+=======
+// HALAMAN PEMBELIAN (GROUPING & MODAL)
+>>>>>>> 44a9bed (pesan penjelasan update)
 // ==========================================
 files['app/pembelian/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
@@ -446,22 +488,46 @@ export default function PembelianPage() {
   const [draft, setDraft] = useState<{ product: Product, qty: number }[]>([])
   const [msg, setMsg] = useState('')
 
+<<<<<<< HEAD
   async function load() {
     setSuppliers(await db.suppliers.toArray())
     setProducts(await db.products.toArray())
     setPurchases(await db.purchases.reverse().toArray()) // Urutkan dari yg terbaru
+=======
+  const [receiveData, setReceiveData] = useState<Purchase | null>(null)
+  const [costInputs, setCostInputs] = useState<Record<string, string>>({})
+  const [detailPurchase, setDetailPurchase] = useState<Purchase | null>(null)
+
+  async function load() {
+    setSuppliers(await db.suppliers.toArray())
+    setProducts(await db.products.toArray())
+    const allPurchases = await db.purchases.toArray()
+    setPurchases(allPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
+>>>>>>> 44a9bed (pesan penjelasan update)
   }
   useEffect(() => { load() }, [])
 
   function addItem() {
     const prod = products.find(x => x.id === productPick)
     if (!prod || Number(qty) <= 0) return
+<<<<<<< HEAD
     setDraft(prev => [...prev, { product: prod, qty: Number(qty) }])
+=======
+    setDraft(prev => {
+      const found = prev.find(d => d.product.id === prod.id)
+      if (found) return prev.map(d => d.product.id === prod.id ? { ...d, qty: d.qty + Number(qty) } : d)
+      return [...prev, { product: prod, qty: Number(qty) }]
+    })
+>>>>>>> 44a9bed (pesan penjelasan update)
     setProductPick(''); setQty('1')
   }
 
   async function submitOrder() {
+<<<<<<< HEAD
     if (!supplierId || !draft.length) return setMsg('Pilih pemasok dan item.')
+=======
+    if (!supplierId || !draft.length) return setMsg('Pilih pemasok dan minimal 1 item.')
+>>>>>>> 44a9bed (pesan penjelasan update)
     
     await db.purchases.add({
       id: crypto.randomUUID(),
@@ -469,7 +535,11 @@ export default function PembelianPage() {
       total: 0,
       status: 'sent',
       created_at: new Date().toISOString(),
+<<<<<<< HEAD
       items: draft.map(d => ({ product_id: d.product.id, qty: d.qty }))
+=======
+      items: draft.map(d => ({ product_id: d.product.id, name: d.product.name, qty: d.qty, cost_per_pcs: 0 }))
+>>>>>>> 44a9bed (pesan penjelasan update)
     })
 
     const sup = suppliers.find(s => s.id === supplierId)
@@ -480,6 +550,7 @@ export default function PembelianPage() {
       window.open(\`https://wa.me/\${wa}?text=\${encodeURIComponent(text)}\`, '_blank')
     }
 
+<<<<<<< HEAD
     setDraft([]); setSupplierId(''); setMsg('Pesanan dibuat!')
     load()
   }
@@ -497,15 +568,62 @@ export default function PembelianPage() {
       const costPerItem = Math.floor(totalCost / p.items.length)
       
       for (const item of p.items) {
+=======
+    setDraft([]); setSupplierId(''); setMsg('Pesanan dibuat & WhatsApp dibuka!')
+    load()
+  }
+
+  function openReceiveModal(p: Purchase, e: React.MouseEvent) {
+    e.stopPropagation()
+    setReceiveData(p)
+    const initialCosts: Record<string, string> = {}
+    p.items.forEach(item => { initialCosts[item.product_id] = '' })
+    setCostInputs(initialCosts)
+  }
+
+  async function handleSaveReceive() {
+    if (!receiveData) return
+
+    let totalModalKeseluruhan = 0
+    const hargaPerPcsMap: Record<string, number> = {}
+    
+    for (const item of receiveData.items) {
+      const inputHargaPerPcs = Number(costInputs[item.product_id])
+      if (isNaN(inputHargaPerPcs) || inputHargaPerPcs <= 0) {
+        return alert(\`Harap isi harga untuk \${item.name} dengan benar.\`)
+      }
+      hargaPerPcsMap[item.product_id] = inputHargaPerPcs
+      totalModalKeseluruhan += (inputHargaPerPcs * item.qty)
+    }
+
+    await db.transaction('rw', db.products, db.purchases, async () => {
+      const updatedItems = receiveData.items.map(item => ({
+        ...item,
+        cost_per_pcs: hargaPerPcsMap[item.product_id]
+      }))
+
+      await db.purchases.update(receiveData.id, { 
+        status: 'received', 
+        total: totalModalKeseluruhan,
+        items: updatedItems
+      })
+      
+      for (const item of receiveData.items) {
+>>>>>>> 44a9bed (pesan penjelasan update)
         const prod = await db.products.get(item.product_id)
         if (prod) {
           await db.products.update(item.product_id, { 
             stock_qty: prod.stock_qty + item.qty,
+<<<<<<< HEAD
             cost: costPerItem / item.qty 
+=======
+            cost: hargaPerPcsMap[item.product_id]
+>>>>>>> 44a9bed (pesan penjelasan update)
           })
         }
       }
     })
+<<<<<<< HEAD
     load()
   }
 
@@ -551,6 +669,166 @@ export default function PembelianPage() {
           })}
         </tbody>
       </table>
+=======
+    
+    setReceiveData(null)
+    load()
+  }
+
+  const groupedPurchases = suppliers.map(sup => {
+    return {
+      supplier: sup,
+      history: purchases.filter(p => p.supplier_id === sup.id)
+    }
+  }).filter(group => group.history.length > 0)
+
+  return (
+    <div className="p-4 pb-24 space-y-4 relative">
+      <h1 className="text-xl font-bold">Pembelian</h1>
+      
+      <div className="bg-white p-3 border rounded-lg shadow-sm space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <select className="border p-2 rounded bg-gray-50" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
+            <option value="">-- Pilih Pemasok --</option>
+            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <select className="border p-2 rounded bg-gray-50 flex-1" value={productPick} onChange={e => setProductPick(e.target.value)}>
+              <option value="">-- Pilih Produk --</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <input type="number" className="border p-2 rounded w-16 text-center" value={qty} onChange={e => setQty(e.target.value)} />
+            <button onClick={addItem} className="bg-gray-800 text-white px-4 rounded font-bold">+</button>
+          </div>
+        </div>
+        
+        {draft.length > 0 && (
+          <div className="bg-gray-50 p-2 rounded text-sm mb-2 border">
+            {draft.map((d, i) => <div key={i}>{d.product.name} - {d.qty} pcs</div>)}
+          </div>
+        )}
+        
+        <button onClick={submitOrder} className="bg-blue-600 text-white px-4 py-2 rounded w-full font-semibold hover:bg-blue-700">
+          Buat Pesanan & Kirim WA
+        </button>
+        {msg && <p className="text-blue-600 text-sm">{msg}</p>}
+      </div>
+
+      <div className="space-y-6 pt-2">
+        <h2 className="font-semibold text-lg">Riwayat Pembelian (Per Pemasok)</h2>
+        <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat rincian barang</p>
+        
+        {groupedPurchases.length === 0 && <p className="text-sm text-gray-500">Belum ada riwayat pembelian.</p>}
+
+        {groupedPurchases.map(({ supplier, history }) => (
+          <div key={supplier.id} className="space-y-2">
+            <h3 className="font-bold text-blue-800 bg-blue-50 inline-block px-3 py-1 rounded-lg border border-blue-100">
+              🏭 {supplier.name}
+            </h3>
+            <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-gray-700 font-bold border-b">
+                    <th className="p-3">Tanggal</th>
+                    <th className="p-3 text-right">Total Modal</th>
+                    <th className="p-3 text-center">Status</th>
+                    <th className="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map(p => (
+                    <tr key={p.id} onClick={() => setDetailPurchase(p)} className="border-b last:border-0 hover:bg-blue-50 cursor-pointer transition-colors">
+                      <td className="p-3 whitespace-nowrap">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
+                      <td className="p-3 text-right">{p.total > 0 ? \`Rp \${p.total.toLocaleString()}\` : '-'}</td>
+                      <td className="p-3 text-center">
+                        <span className={\`px-2 py-1 rounded text-xs font-semibold \${p.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}\`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {p.status === 'sent' && (
+                          <button onClick={(e) => openReceiveModal(p, e)} className="text-green-600 font-bold text-xs hover:underline px-2 py-1 bg-green-50 rounded">
+                            terima
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* MODAL 1: INPUT HARGA MODAL (SAAT TERIMA BARANG) */}
+      {receiveData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+            <div>
+              <h2 className="font-bold text-lg text-gray-900">Penerimaan Barang</h2>
+              <p className="text-sm text-gray-500 mt-1">Masukkan harga beli (modal) sesuai nota dari supplier.</p>
+            </div>
+            <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
+              {receiveData.items.map((item) => (
+                <div key={item.product_id} className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-gray-800">
+                    {item.name} <span className="text-gray-500 font-normal">({item.qty} pcs)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-600">Rp</span>
+                    <input type="number" className="border border-gray-300 p-2.5 rounded-lg flex-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Harga per pcs" value={costInputs[item.product_id] || ''} onChange={(e) => setCostInputs({ ...costInputs, [item.product_id]: e.target.value })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end pt-2 border-t mt-4">
+              <button onClick={() => setReceiveData(null)} className="px-4 py-2.5 text-gray-600 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50">Batal</button>
+              <button onClick={handleSaveReceive} className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">Simpan & Tambah Stok</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: DETAIL RINCIAN PEMBELIAN */}
+      {detailPurchase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+            <div className="border-b pb-3">
+              <h2 className="font-bold text-lg text-gray-900">Detail Pembelian</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(detailPurchase.created_at).toLocaleString('id-ID')} • <span className={\`ml-1 uppercase font-bold \${detailPurchase.status === 'received' ? 'text-green-600' : 'text-yellow-600'}\`}>{detailPurchase.status}</span>
+              </p>
+            </div>
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {detailPurchase.items.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-start text-sm border-b pb-2 last:border-0">
+                  <div>
+                    <p className="font-semibold text-gray-800">{item.name}</p>
+                    <p className="text-xs text-gray-500">{item.qty} pcs</p>
+                  </div>
+                  <div className="text-right">
+                    {item.cost_per_pcs > 0 ? (
+                      <>
+                        <p className="font-medium">Rp {(item.cost_per_pcs * item.qty).toLocaleString()}</p>
+                        <p className="text-[10px] text-gray-400">@ Rp {item.cost_per_pcs.toLocaleString()}/pcs</p>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Belum ada harga</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between items-center pt-3 border-t mt-2">
+              <span className="font-bold text-gray-600">Total Modal</span>
+              <span className="font-bold text-lg text-blue-600">{detailPurchase.total > 0 ? \`Rp \${detailPurchase.total.toLocaleString()}\` : '-'}</span>
+            </div>
+            <button onClick={() => setDetailPurchase(null)} className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200">Tutup</button>
+          </div>
+        </div>
+      )}
+>>>>>>> 44a9bed (pesan penjelasan update)
     </div>
   )
 }
@@ -561,6 +839,7 @@ export default function PembelianPage() {
 // ==========================================
 files['app/laporan/page.tsx'] = `'use client'
 import { useEffect, useState } from 'react'
+<<<<<<< HEAD
 import { db, exportData, Product } from '@/lib/db'
 
 export default function LaporanPage() {
@@ -606,6 +885,186 @@ export default function LaporanPage() {
           Download Backup Data (JSON)
         </button>
       </div>
+=======
+import { db, exportData, Sale, Product } from '@/lib/db'
+
+export default function LaporanPage() {
+  const [sales, setSales] = useState<Sale[]>([])
+  const [lowStock, setLowStock] = useState<Product[]>([])
+  
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date()
+    const offset = today.getTimezoneOffset() * 60000
+    return new Date(today.getTime() - offset).toISOString().split('T')[0]
+  })
+
+  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [trxCount, setTrxCount] = useState(0)
+  const [paymentSummary, setPaymentSummary] = useState<Record<string, number>>({})
+
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+
+  async function fetchData() {
+    try {
+      const prods = await db.products.toArray()
+      setLowStock(prods.filter(p => p.stock_qty <= 5))
+
+      const allSales = await db.sales.toArray()
+      
+      const filteredSales = allSales.filter(s => {
+        const dateObj = new Date(s.created_at)
+        const offset = dateObj.getTimezoneOffset() * 60000
+        const localISOTime = new Date(dateObj.getTime() - offset).toISOString().split('T')[0]
+        return localISOTime === selectedDate
+      })
+      
+      filteredSales.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setSales(filteredSales)
+      setTrxCount(filteredSales.length)
+      
+      let total = 0
+      const summary: Record<string, number> = {}
+      filteredSales.forEach(s => {
+        total += s.total
+        if (!summary[s.method]) summary[s.method] = 0
+        summary[s.method] += s.total
+      })
+
+      setTotalRevenue(total)
+      setPaymentSummary(summary)
+    } catch (error) {
+      console.error("Gagal memuat laporan:", error)
+    }
+  }
+
+  useEffect(() => { fetchData() }, [selectedDate])
+
+  async function handleClearTransactions() {
+    if (!confirm('PERINGATAN: Apakah Anda yakin ingin menghapus SEMUA riwayat penjualan dan pembelian? Tindakan ini tidak bisa dibatalkan.')) return
+    await db.sales.clear()
+    await db.purchases.clear()
+    alert('Semua riwayat transaksi berhasil dihapus.')
+    fetchData()
+  }
+
+  return (
+    <div className="p-4 pb-24 space-y-4 relative">
+      <div className="flex justify-between items-center">
+        <h1 className="text-xl font-bold">Laporan</h1>
+        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border p-2 rounded text-sm bg-white" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white border p-4 rounded shadow-sm">
+          <p className="text-sm text-gray-500">Total Penjualan</p>
+          <p className="text-2xl font-bold text-blue-600">Rp {totalRevenue.toLocaleString()}</p>
+          <p className="text-xs mt-1 text-gray-600">Dari <strong className="text-gray-900">{trxCount}</strong> transaksi</p>
+        </div>
+        <div className="bg-white border p-4 rounded shadow-sm">
+          <p className="text-sm text-gray-500 mb-2">Rincian Metode Pembayaran</p>
+          <div className="space-y-1">
+            {Object.keys(paymentSummary).length === 0 ? (
+              <p className="text-sm text-gray-400">Tidak ada transaksi.</p>
+            ) : (
+              Object.entries(paymentSummary).map(([method, amount]) => (
+                <div key={method} className="flex justify-between text-sm">
+                  <span className="uppercase font-semibold text-gray-700">{method}</span>
+                  <span>Rp {amount.toLocaleString()}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <h2 className="font-semibold text-lg pt-2">Rincian Transaksi</h2>
+      <p className="text-xs text-gray-500 -mt-3 mb-2">*Klik baris tabel untuk melihat detail barang</p>
+      
+      <div className="bg-white border rounded overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-100 text-left text-gray-700">
+              <th className="p-3">Jam</th>
+              <th className="p-3">Metode</th>
+              <th className="p-3">Barang</th>
+              <th className="p-3 text-right">Total (Rp)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sales.map((s) => (
+              <tr key={s.id} onClick={() => setSelectedSale(s)} className="border-t hover:bg-blue-50 cursor-pointer transition-colors">
+                <td className="p-3">{new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
+                <td className="p-3 uppercase text-xs font-bold text-blue-600">{s.method}</td>
+                <td className="p-3 text-xs text-gray-500">{s.items && s.items.length > 0 ? \`\${s.items.reduce((sum, item) => sum + item.qty, 0)} item\` : '-'}</td>
+                <td className="p-3 text-right font-medium">{s.total.toLocaleString()}</td>
+              </tr>
+            ))}
+            {sales.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-gray-500">Tidak ada transaksi pada tanggal ini.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className="font-semibold text-lg pt-2">Produk Stok Menipis</h2>
+      <div className="bg-white border rounded overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-100 text-left text-gray-700">
+              <th className="p-3">Produk</th>
+              <th className="p-3 text-right">Sisa Stok</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lowStock.map((p) => (
+              <tr key={p.id} className="border-t hover:bg-red-50">
+                <td className="p-3 font-medium text-red-600">{p.name}</td>
+                <td className="p-3 text-right font-bold text-red-600">{p.stock_qty}</td>
+              </tr>
+            ))}
+            {lowStock.length === 0 && <tr><td colSpan={2} className="p-4 text-center text-green-600 font-medium">Semua stok aman.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mt-6">
+        <h2 className="font-bold text-yellow-800 mb-2">Amankan Data Anda</h2>
+        <p className="text-sm text-yellow-700 mb-3">Lakukan backup rutin agar data tidak hilang jika HP rusak atau cache terhapus.</p>
+        <button onClick={exportData} className="bg-yellow-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-yellow-700">Download Backup Data (JSON)</button>
+      </div>
+
+      <div className="bg-red-50 border border-red-200 p-4 rounded mt-4">
+        <h2 className="font-bold text-red-800 mb-2">Zona Berbahaya</h2>
+        <p className="text-sm text-red-700 mb-3">Menghapus semua riwayat penjualan dan pembelian. Data produk dan pemasok tidak akan terhapus.</p>
+        <button onClick={handleClearTransactions} className="bg-red-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-red-700">Hapus Semua Transaksi</button>
+      </div>
+
+      {selectedSale && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+            <div className="border-b pb-3">
+              <h2 className="font-bold text-lg text-gray-900">Detail Transaksi</h2>
+              <p className="text-xs text-gray-500 mt-1">{new Date(selectedSale.created_at).toLocaleString('id-ID')} • <span className="uppercase font-bold text-blue-600">{selectedSale.method}</span></p>
+            </div>
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {selectedSale.items && selectedSale.items.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
+                  <div>
+                    <p className="font-semibold text-gray-800">{item.name}</p>
+                    <p className="text-xs text-gray-500">{item.qty} x Rp {item.price.toLocaleString()}</p>
+                  </div>
+                  <p className="font-medium">Rp {(item.qty * item.price).toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between items-center pt-3 border-t mt-2">
+              <span className="font-bold text-gray-600">Total</span>
+              <span className="font-bold text-lg text-blue-600">Rp {selectedSale.total.toLocaleString()}</span>
+            </div>
+            <button onClick={() => setSelectedSale(null)} className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200">Tutup</button>
+          </div>
+        </div>
+      )}
+>>>>>>> 44a9bed (pesan penjelasan update)
     </div>
   )
 }
@@ -623,7 +1082,11 @@ async function main() {
     console.log('  ✓', path)
     count++
   }
+<<<<<<< HEAD
   console.log(`\n✅ ${count} file dibuat (Versi Dexie.js Offline).\n`)
+=======
+  console.log(`\n✅ ${count} file dibuat (Versi Final Offline).\n`)
+>>>>>>> 44a9bed (pesan penjelasan update)
   console.log('Langkah menjalankan:')
   console.log('  1. npm install')
   console.log('  2. npm run dev')
