@@ -1,6 +1,6 @@
 {
-  "name": "Toko Offline POS",
-  "short_name": "TokoKu",
+  "name": "NTT Link POS",
+  "short_name": "NTT Link",
   "start_url": "/kasir",
   "display": "standalone",
   "background_color": "#ffffff",
