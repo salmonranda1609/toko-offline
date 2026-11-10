@@ -32,6 +32,7 @@ export interface Purchase {
   items: any[]
 }
 
+// Inisialisasi Database Dexie
 const db = new Dexie('TokoKelontongDB') as Dexie & {
   products: EntityTable<Product, 'id'>
   suppliers: EntityTable<Supplier, 'id'>
@@ -48,26 +49,30 @@ db.version(1).stores({
 
 export { db }
 
-// --- FUNGSI BACKUP ---
+// --- FUNGSI BACKUP (EXPORT) ---
 export async function exportData() {
+  // Pastikan fungsi hanya berjalan di browser (Client Side)
   if (typeof window === 'undefined') return
-  const data = {
-    products: await db.products.toArray(),
-    suppliers: await db.suppliers.toArray(),
-    sales: await db.sales.toArray(),
-    purchases: await db.purchases.toArray()
+  
+  try {
+    // Menggunakan fitur export dari dexie-export-import
+    const blob = await db.export()
+    
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `backup-toko-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error("Gagal backup:", error)
+    alert("Gagal melakukan backup data.")
   }
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `backup-toko-${new Date().toISOString().split('T')[0]}.json`
-  a.click()
 }
-
 
 // --- FUNGSI RESTORE (IMPORT) ---
 export async function importData(file: File) {
+  // Pastikan fungsi hanya berjalan di browser (Client Side)
   if (typeof window === 'undefined') return false
   
   try {
@@ -77,6 +82,7 @@ export async function importData(file: File) {
     }
 
     // Menggunakan fitur import dari dexie-export-import
+    // clearTablesBeforeImport: true akan menghapus data lama sebelum memasukkan data baru
     await db.import(file, { clearTablesBeforeImport: true })
     
     alert('Data berhasil dipulihkan!')
