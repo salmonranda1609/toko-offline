@@ -3,7 +3,8 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false, // PASTIKAN INI 'false' AGAR PWA SELALU AKTIF (Bahkan saat dev)
+  disable: false, // Pastikan false agar Service Worker dibuat di Vercel
+  buildExcludes: [/middleware-manifest\.json$/], // Mencegah error build di Next.js terbaru
   runtimeCaching: [
     {
       urlPattern: ({ request }) => request.mode === 'navigate',
@@ -13,7 +14,7 @@ const withPWA = require('next-pwa')({
         networkTimeoutSeconds: 3,
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 30 * 24 * 60 * 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 hari
         },
       },
     },
@@ -24,7 +25,7 @@ const withPWA = require('next-pwa')({
         cacheName: 'next-static',
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 365 * 24 * 60 * 60,
+          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 tahun
         },
       },
     },
